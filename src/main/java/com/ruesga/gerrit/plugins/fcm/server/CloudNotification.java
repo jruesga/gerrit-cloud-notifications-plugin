@@ -26,13 +26,20 @@ public class CloudNotification extends AccountResource {
                     new TypeLiteral<RestView<CloudNotification>>() {};
 
     private final String deviceId;
+    private final String token;
 
-    public CloudNotification(IdentifiedUser user, String deviceId) {
+    public CloudNotification(
+            IdentifiedUser user, String deviceId, String token) {
       super(user);
       this.deviceId = deviceId;
+      this.token = token;
     }
 
     public String getDeviceId() {
       return deviceId;
+    }
+
+    public String getToken() {
+      return token;
     }
 }

@@ -89,16 +89,17 @@ public class DatabaseManager {
     }
 
     public CloudNotificationInfo getCloudNotification(
-            String userName, String deviceId) {
+            String userName, String deviceId, String token) {
         CloudNotificationInfo notification = null;
         TransactionStore ts = openTransactionalStore();
         Transaction tx  = ts.begin();
 
+        final String key = token + "|" + deviceId;
         TransactionMap<String, String> map = tx.openMap(userName,
                 StringDataType.INSTANCE, StringDataType.INSTANCE);
-        if (map.containsKey(deviceId)) {
+        if (map.containsKey(key)) {
             notification = gson.fromJson(
-                    map.get(deviceId), CloudNotificationInfo.class);
+                    map.get(key), CloudNotificationInfo.class);
             tx.commit();
         } else {
             tx.rollback();
@@ -146,14 +147,16 @@ public class DatabaseManager {
         ts.close();
     }
 
-    public void unregisterCloudNotification(String userName, String deviceId) {
+    public void unregisterCloudNotification(
+            String userName, String deviceId, String token) {
         TransactionStore ts = openTransactionalStore();
         Transaction tx  = ts.begin();
 
+        final String key = token + "|" + deviceId;
         TransactionMap<String, String> map = tx.openMap(userName,
                 StringDataType.INSTANCE, StringDataType.INSTANCE);
-        if (map.containsKey(deviceId)) {
-            map.remove(deviceId);
+        if (map.containsKey(key)) {
+            map.remove(key);
             tx.commit();
         } else {
             tx.rollback();

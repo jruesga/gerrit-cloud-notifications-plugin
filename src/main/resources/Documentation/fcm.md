@@ -14,14 +14,14 @@ This plugin addes new methods to the /accounts Gerrit REST Api entry point to al
 
 ----------
 **Get Cloud Notification**
-`'GET /accounts/{account-id}/cloud-notifications/{device-id}'`
+`'GET /accounts/{account-id}/cloud-notifications/{device-id}/{token}'`
 
 Retrieves a registered device information hold by the Gerrit server instance.
 
 *Request*
 This request requires an authenticated call  and only returns information if account-id is the authenticated account. This method returns a *CloudNotificationInfo* entity (see below).
 
-    GET /accounts/self/cloud-notifications/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1
+    GET /accounts/self/cloud-notifications/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/f986567456f107d0eb2d84c85ac5aed2
 
 *Response*
 
@@ -76,14 +76,14 @@ As a response, this method returs the registered *CloudNotificationInfo* entity 
 
  ----------
 **Unregister Cloud Notification**
-`'DELETE /accounts/{account-id}/cloud-notifications/{device-id}'`
+`'DELETE /accounts/{account-id}/cloud-notifications/{device-id}/{token}'`
 
 Unregister a registered device information hold by the Gerrit server instance.
 
 *Request*
 This request requires an authenticated call  and is only valid if account-id is the authenticated account.
 
-    DELETE /accounts/self/cloud-notifications/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1
+    DELETE /accounts/self/cloud-notifications/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/f986567456f107d0eb2d84c85ac5aed2
 
 *Response*
 
@@ -151,8 +151,8 @@ Enumeration of available Firebase notification modes.
 
 
 
-FCM NOTICATION
---------------
+FCM NOTIFICATION
+----------------
 
 **Custom Data**
 

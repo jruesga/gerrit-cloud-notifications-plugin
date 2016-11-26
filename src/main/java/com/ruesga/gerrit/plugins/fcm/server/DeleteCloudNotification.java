@@ -54,7 +54,9 @@ public class DeleteCloudNotification
 
         // Delete registered client from database
         db.unregisterCloudNotification(
-                self.get().getUserName(), notification.getDeviceId());
+                self.get().getUserName(),
+                notification.getDeviceId(),
+                notification.getToken());
 
         // Done
         return Response.none();

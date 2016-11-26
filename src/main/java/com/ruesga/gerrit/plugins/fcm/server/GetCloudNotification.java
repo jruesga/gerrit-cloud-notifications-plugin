@@ -50,7 +50,9 @@ public class GetCloudNotification implements RestReadView<CloudNotification> {
 
         // Obtain from database
         CloudNotificationInfo notif = db.getCloudNotification(
-                self.get().getUserName(), notification.getDeviceId());
+                self.get().getUserName(),
+                notification.getDeviceId(),
+                notification.getToken());
         if (notif == null) {
             throw new ResourceNotFoundException();
         }
