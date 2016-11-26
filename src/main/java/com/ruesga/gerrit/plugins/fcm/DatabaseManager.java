@@ -65,7 +65,7 @@ public class DatabaseManager {
             this.dbFile = new File(path.toFile(), DATABASE_NAME);
         }
 
-        if (this.dbFile.canWrite()) {
+        if (!this.dbFile.canWrite()) {
             log.warn(String.format(
                     "[%s] Database is not writeable.", pluginName));
             throw new IllegalArgumentException("Database is not writeable: "
