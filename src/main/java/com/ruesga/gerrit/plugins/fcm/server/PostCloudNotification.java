@@ -41,11 +41,6 @@ public class PostCloudNotification
         public String deviceId;
 
         /**
-         * When the device was registered.
-         */
-        public Date registeredOn;
-
-        /**
          * A device token that unique identifies the server/account in the device.
          */
         public String token;
