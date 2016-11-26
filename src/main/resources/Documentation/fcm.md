@@ -1,7 +1,10 @@
 Firebase Cloud Notifications Plugin
 ===================================
 
-This document explain how this plugins works.
+App implementations should register the device token identifier received from FCM, using the *Register Cloud Notification* method to send the device token identifier and configure how it wants to be notified. When registering the device, it also should provide a token, which is returned on every notification, that allows to identify
+the Gerrit instance how send the notification. In addition, an app can configure which events wants to listen to and how the message from FCM is received (as notification, as custom data or received both). Read the FCM documentation to know which is more appropriated for your device operation system. See *Custom Data* in the FCM Notification section to see the information returned as custom data.
+
+An app can unregistered a device (and stop receiving notifications) from the Gerrit instance using the *Unregister Cloud Notification* method.
 
 
 REST API
@@ -145,3 +148,32 @@ Enumeration of available Firebase notification modes.
 `DATA: Notification in the device is handled by the app which receives a custom object data`
 
 `BOTH: Notification includes both: notification data and custom object data`
+
+
+
+FCM NOTICATION
+--------------
+
+**Custom Data**
+
+This is the information sent as a custom data inside the FCM notification. Depends on the event, some of this fields could be empty.
+
+`token: The token used to registered the device`
+
+`event: The event type (see CloudNotificationEvents above)`
+
+`change: The legacy change identifier`
+
+`revision: The revision/patchset identifier`
+
+`project: The project identifier`
+
+`branch: The branch identifier`
+
+`topic: The topic identifier`
+
+`author: The 'username' of the user that originated the notification`
+
+`subject: The subject of the change`
+
+`message: A message associated to the notification`
