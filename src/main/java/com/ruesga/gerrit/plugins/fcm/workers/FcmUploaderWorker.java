@@ -68,7 +68,7 @@ public class FcmUploaderWorker {
     }
 
     public void create() {
-        this.executor = Executors.newWorkStealingPool();
+        this.executor = Executors.newCachedThreadPool();
     }
 
     public void shutdown() {
