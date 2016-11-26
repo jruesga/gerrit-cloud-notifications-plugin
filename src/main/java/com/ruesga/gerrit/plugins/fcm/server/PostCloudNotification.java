@@ -86,7 +86,7 @@ public class PostCloudNotification
 
         // Create or update the notification
         CloudNotificationInfo notification = db.getCloudNotification(
-                self.get().getUserName(), input.deviceId);
+                self.get().getUserName(), input.deviceId, input.token);
         if (notification == null) {
             notification = new CloudNotificationInfo();
             notification.deviceId = input.deviceId;
