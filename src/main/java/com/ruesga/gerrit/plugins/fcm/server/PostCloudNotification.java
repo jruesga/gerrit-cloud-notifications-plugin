@@ -1,0 +1,110 @@
+/*
+ * Copyright (C) 2016 Jorge Ruesga
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.ruesga.gerrit.plugins.fcm.server;
+
+import java.util.Date;
+
+import com.google.gerrit.extensions.restapi.BadRequestException;
+import com.google.gerrit.extensions.restapi.RestModifyView;
+import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
+import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationEvents;
+import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationInfo;
+import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationResponseMode;
+import com.ruesga.gerrit.plugins.fcm.server.PostCloudNotification.Input;
+import com.google.gerrit.server.CurrentUser;
+import com.google.gerrit.server.account.AccountResource;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
+
+@Singleton
+public class PostCloudNotification
+        implements RestModifyView<AccountResource, Input> {
+
+    public static class Input {
+        /**
+         * A Firebase Cloud Messaging registered device identification.
+         */
+        public String deviceId;
+
+        /**
+         * When the device was registered.
+         */
+        public Date registeredOn;
+
+        /**
+         * A device token that unique identifies the server/account in the device.
+         */
+        public String token;
+
+        /**
+         * A bitwise flag to indicate which events to notify.
+         * @see CloudNotificationEvents
+         */
+        public int events = CloudNotificationEvents.NONE_NOTIFICATIONS_EVENTS;
+
+        /**
+         * Firebase response mode.
+         * @see CloudNotificationResponseMode
+         */
+        public CloudNotificationResponseMode responseMode =
+                CloudNotificationResponseMode.BOTH;
+    }
+
+    private final Provider<CurrentUser> self;
+    private final DatabaseManager db;
+
+    @Inject
+    public PostCloudNotification(
+            Provider<CurrentUser> self,
+            DatabaseManager db) {
+        super();
+        this.self = self;
+        this.db = db;
+    }
+
+    @Override
+    public CloudNotificationInfo apply(AccountResource acct, Input input)
+            throws BadRequestException {
+        // Request are only valid from the current authenticated user
+        if (self.get() != acct.getUser()) {
+            throw new BadRequestException("invalid account!");
+        }
+
+        // Check request parameters
+        if (input.deviceId == null || input.deviceId.isEmpty()) {
+            throw new BadRequestException("deviceId is empty!");
+        }
+
+        // Create or update the notification
+        CloudNotificationInfo notification = db.getCloudNotification(
+                self.get().getUserName(), input.deviceId);
+        if (notification == null) {
+            notification = new CloudNotificationInfo();
+            notification.deviceId = input.deviceId;
+            notification.registeredOn = new Date();
+        }
+        notification.token = input.token;
+        notification.events = input.events;
+        notification.responseMode = input.responseMode;
+
+        // Persist the notification
+        db.registerCloudNotification(
+                self.get().getUserName(), notification);
+
+        return notification;
+    }
+}
