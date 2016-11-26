@@ -17,32 +17,33 @@ package com.ruesga.gerrit.plugins.fcm.rest;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 public class CloudNotificationInfo {
     /**
      * A Firebase Cloud Messaging registered device identification.
      */
-    public String deviceId;
+    @SerializedName("deviceId") public String deviceId;
 
     /**
      * When the device was registered.
      */
-    public Date registeredOn;
+    @SerializedName("registeredOn") public Date registeredOn;
 
     /**
      * A device token that unique identifies the server/account in the device.
      */
-    public String token;
+    @SerializedName("token") public String token;
 
     /**
      * A bitwise flag to indicate which events to notify.
      * @see CloudNotificationEvents
      */
-    public int events = CloudNotificationEvents.NONE_NOTIFICATIONS_EVENTS;
+    @SerializedName("events") public int events = CloudNotificationEvents.NONE_NOTIFICATIONS_EVENTS;
 
     /**
      * Firebase response mode.
      * @see CloudNotificationResponseMode
      */
-    public CloudNotificationResponseMode responseMode =
-            CloudNotificationResponseMode.BOTH;
+    @SerializedName("responseMode") public CloudNotificationResponseMode responseMode = CloudNotificationResponseMode.BOTH;
 }
