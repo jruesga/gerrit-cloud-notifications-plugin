@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Supplier;
 import com.google.gerrit.common.EventListener;
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.server.data.AccountAttribute;
@@ -85,7 +84,6 @@ public class EventHandler implements EventListener {
                 .registerTypeAdapter(Date.class, new UtcDateAdapter())
                 .create();
     }
-
 
     @Override
     public void onEvent(Event event) {
