@@ -25,7 +25,7 @@ public class Notification {
     public String topic;
     public String author;
     public String subject;
-    public String message;
+    public String extra;
 
     @Override
     public Object clone() {
@@ -39,7 +39,7 @@ public class Notification {
         other.topic = topic;
         other.author = author;
         other.subject = subject;
-        other.message = message;
+        other.extra = extra;
         return other;
     }
 }

@@ -172,8 +172,8 @@ This is the information sent as a custom data inside the FCM notification. Depen
 
 `topic: The topic identifier`
 
-`author: The 'username' of the user that originated the notification`
+`author: A json object that contains the username, name and email of the account that originated the notification`
 
 `subject: The subject of the change`
 
-`message: A message associated to the notification`
+`extra: A json with extended information depending on event type, like comment, old and new topics, ...`
