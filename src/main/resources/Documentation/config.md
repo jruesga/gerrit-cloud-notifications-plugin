@@ -2,7 +2,7 @@ Configuration
 =============
 
 This plugin provides a wizard configuration that will you ask
-for plugin configuration paramters on install.
+for plugin configuration parameters on install.
 
 Manual configuration
 --------------------
