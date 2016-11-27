@@ -49,7 +49,7 @@ public class PostCloudNotification
          * A bitwise flag to indicate which events to notify.
          * @see CloudNotificationEvents
          */
-        public int events = CloudNotificationEvents.NONE_NOTIFICATIONS_EVENTS;
+        public int events;
 
         /**
          * Firebase response mode.

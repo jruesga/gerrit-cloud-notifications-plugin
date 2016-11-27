@@ -39,7 +39,7 @@ public class CloudNotificationInfo {
      * A bitwise flag to indicate which events to notify.
      * @see CloudNotificationEvents
      */
-    @SerializedName("events") public int events = CloudNotificationEvents.NONE_NOTIFICATIONS_EVENTS;
+    @SerializedName("events") public int events;
 
     /**
      * Firebase response mode.

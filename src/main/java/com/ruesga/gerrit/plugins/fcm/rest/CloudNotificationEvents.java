@@ -16,7 +16,6 @@
 package com.ruesga.gerrit.plugins.fcm.rest;
 
 public class CloudNotificationEvents {
-
     public static final int CHANGE_ABANDONED_EVENT = 0x01;
     public static final int CHANGE_MERGED_EVENT = 0x02;
     public static final int CHANGE_RESTORED_EVENT = 0x04;
@@ -27,13 +26,4 @@ public class CloudNotificationEvents {
     public static final int REVIEWER_DELETED_EVENT = 0x80;
     public static final int PATCHSET_CREATED_EVENT = 0x100;
     public static final int TOPIC_CHANGED_EVENT = 0x200;
-
-    public static final int NONE_NOTIFICATIONS_EVENTS = 0;
-
-    public static final int ALL_NOTIFICATIONS_EVENTS =
-            CHANGE_ABANDONED_EVENT | CHANGE_MERGED_EVENT |
-            CHANGE_RESTORED_EVENT | COMMENT_ADDED_EVENT |
-            DRAFT_PUBLISHED_EVENT | HASHTAG_CHANGED_EVENT |
-            REVIEWER_ADDED_EVENT | REVIEWER_DELETED_EVENT |
-            PATCHSET_CREATED_EVENT | TOPIC_CHANGED_EVENT;
 }
