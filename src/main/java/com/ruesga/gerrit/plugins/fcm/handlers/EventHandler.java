@@ -16,7 +16,6 @@
 package com.ruesga.gerrit.plugins.fcm.handlers;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -43,7 +42,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import com.google.inject.Inject;
-import com.ruesga.gerrit.plugins.fcm.adapters.UtcDateAdapter;
 import com.ruesga.gerrit.plugins.fcm.messaging.Notification;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationEvents;
 import com.ruesga.gerrit.plugins.fcm.workers.FcmUploaderWorker;
@@ -80,9 +78,7 @@ public class EventHandler implements EventListener {
         super();
         this.pluginName = pluginName;
         this.uploader = uploader;
-        this.gson = new GsonBuilder()
-                .registerTypeAdapter(Date.class, new UtcDateAdapter())
-                .create();
+        this.gson = new GsonBuilder().create();
     }
 
     @Override

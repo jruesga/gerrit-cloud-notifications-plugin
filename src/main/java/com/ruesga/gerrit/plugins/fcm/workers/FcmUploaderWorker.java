@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,7 +35,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.ruesga.gerrit.plugins.fcm.Configuration;
 import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
-import com.ruesga.gerrit.plugins.fcm.adapters.UtcDateAdapter;
 import com.ruesga.gerrit.plugins.fcm.messaging.Notification;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationInfo;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationResponseMode;
@@ -62,9 +60,7 @@ public class FcmUploaderWorker {
         this.pluginName = pluginName;
         this.config = config;
         this.db = db;
-        this.gson = new GsonBuilder()
-                .registerTypeAdapter(Date.class, new UtcDateAdapter())
-                .create();
+        this.gson = new GsonBuilder().create();
     }
 
     public void create() {

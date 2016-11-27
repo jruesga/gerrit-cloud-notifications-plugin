@@ -12,8 +12,10 @@ REST API
 
 This plugin addes new methods to the /accounts Gerrit REST Api entry point to allow a device to register/unregister to receive event notification in this gerrit instance.
 
-----------
+***
+
 **Get Cloud Notification**
+
 `'GET /accounts/{account-id}/cloud-notifications/{device-id}/{token}'`
 
 Retrieves a registered device information hold by the Gerrit server instance.
@@ -38,8 +40,10 @@ This request requires an authenticated call  and only returns information if acc
       "responseMode": "DATA"
     }
 
-----------
+***
+
 **Register Cloud Notification**
+
 `'POST /accounts/{account-id}/cloud-notifications'`
 
 Register or update a registered device information to be hold by the Gerrit server instance.
@@ -74,8 +78,10 @@ As a response, this method returs the registered *CloudNotificationInfo* entity 
       "responseMode": "NOTIFICATION"
     }
 
- ----------
+***
+
 **Unregister Cloud Notification**
+
 `'DELETE /accounts/{account-id}/cloud-notifications/{device-id}/{token}'`
 
 Unregister a registered device information hold by the Gerrit server instance.
@@ -89,8 +95,10 @@ This request requires an authenticated call  and is only valid if account-id is 
 
     HTTP/1.1 204 No Content
 
-----------
+***
+
 **CloudNotificationInfo**
+
 Entity with information about a registered device.
 
 `deviceId: A Firebase Cloud Messaging registered device identification.`
@@ -103,8 +111,10 @@ Entity with information about a registered device.
 
 `responseMode: Firebase response mode. See CloudNotificationResponseMode below.`
 
-----------
+***
+
 **CloudNotificationInput**
+
 Entity with information about a device to be register.
 
 `deviceId: A Firebase Cloud Messaging registered device identification.`
@@ -115,8 +125,10 @@ Entity with information about a device to be register.
 
 `responseMode: Firebase response mode. See CloudNotificationResponseMode below.`
 
- ----------
+***
+
 **CloudNotificationEvents**
+
 Enumeration of available events to notify to the client device.
 
 `CHANGE_ABANDONED_EVENT = 0x01`
@@ -139,8 +151,10 @@ Enumeration of available events to notify to the client device.
 
 `TOPIC_CHANGED_EVENT = 0x200`
 
- ----------
+***
+
 **CloudNotificationResponseMode**
+
 Enumeration of available Firebase notification modes.
 
 `NOTIFICATION: Notification in the device is handled by Firebase`

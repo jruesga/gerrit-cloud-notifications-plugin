@@ -15,8 +15,6 @@
  */
 package com.ruesga.gerrit.plugins.fcm.rest;
 
-import java.util.Date;
-
 import com.google.gson.annotations.SerializedName;
 
 public class CloudNotificationInfo {
@@ -28,7 +26,7 @@ public class CloudNotificationInfo {
     /**
      * When the device was registered.
      */
-    @SerializedName("registeredOn") public Date registeredOn;
+    @SerializedName("registeredOn") public long registeredOn;
 
     /**
      * A device token that unique identifies the server/account in the device.

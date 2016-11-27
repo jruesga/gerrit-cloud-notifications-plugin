@@ -15,8 +15,6 @@
  */
 package com.ruesga.gerrit.plugins.fcm.server;
 
-import java.util.Date;
-
 import com.google.gerrit.extensions.restapi.BadRequestException;
 import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
@@ -90,14 +88,14 @@ public class PostCloudNotification
         }
 
         // Create or update the notification
-        CloudNotificationInfo notification = db.getCloudNotification(
+        CloudNotificationInfo notification = null; db.getCloudNotification(
                 self.get().getUserName(), input.deviceId, input.token);
         if (notification == null) {
             notification = new CloudNotificationInfo();
             notification.deviceId = input.deviceId;
-            notification.registeredOn = new Date();
+            notification.token = input.token;
         }
-        notification.token = input.token;
+        notification.registeredOn = System.currentTimeMillis();
         notification.events = input.events;
         notification.responseMode = input.responseMode;
 
