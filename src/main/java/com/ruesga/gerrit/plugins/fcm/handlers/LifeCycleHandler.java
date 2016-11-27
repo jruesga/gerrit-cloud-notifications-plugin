@@ -38,12 +38,14 @@ public class LifeCycleHandler implements LifecycleListener {
 
     @Override
     public void start() {
+        this.db.initialize();
         this.uploader.create();
     }
 
     @Override
     public void stop() {
         this.uploader.shutdown();
+        this.db.shutdown();
     }
 
 }
