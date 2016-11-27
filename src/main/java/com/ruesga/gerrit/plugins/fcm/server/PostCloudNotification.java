@@ -26,6 +26,7 @@ import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationResponseMode;
 import com.ruesga.gerrit.plugins.fcm.server.PostCloudNotification.Input;
 import com.google.gerrit.server.CurrentUser;
 import com.google.gerrit.server.account.AccountResource;
+import com.google.gson.annotations.SerializedName;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -38,23 +39,24 @@ public class PostCloudNotification
         /**
          * A Firebase Cloud Messaging registered device identification.
          */
-        public String deviceId;
+        @SerializedName("deviceId") public String deviceId;
 
         /**
          * A device token that unique identifies the server/account in the device.
          */
-        public String token;
+        @SerializedName("token") public String token;
 
         /**
          * A bitwise flag to indicate which events to notify.
          * @see CloudNotificationEvents
          */
-        public int events;
+        @SerializedName("events") public int events;
 
         /**
          * Firebase response mode.
          * @see CloudNotificationResponseMode
          */
+        @SerializedName("responseMode")
         public CloudNotificationResponseMode responseMode =
                 CloudNotificationResponseMode.BOTH;
     }
@@ -82,6 +84,9 @@ public class PostCloudNotification
         // Check request parameters
         if (input.deviceId == null || input.deviceId.isEmpty()) {
             throw new BadRequestException("deviceId is empty!");
+        }
+        if (input.token == null || input.token.isEmpty()) {
+            throw new BadRequestException("token is empty!");
         }
 
         // Create or update the notification
