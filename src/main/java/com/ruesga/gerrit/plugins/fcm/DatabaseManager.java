@@ -49,6 +49,7 @@ public class DatabaseManager {
     private final File dbFile;
     private final String pluginName;
     private final Gson gson;
+    private MVStore store;
 
     @Inject
     public DatabaseManager(
@@ -71,21 +72,21 @@ public class DatabaseManager {
             throw new IllegalArgumentException("Database is not writeable: "
                     + this.dbFile.getAbsolutePath());
         }
-
-        initializeDatabase();
     }
 
     private TransactionStore openTransactionalStore() {
-        return new TransactionStore(
-                MVStore.open(this.dbFile.getAbsolutePath()));
+        return new TransactionStore(this.store);
     }
 
-    private void initializeDatabase() {
+    public void initialize() {
         log.info(String.format("[%s] Initialize database ...", pluginName));
 
-        MVStore store = MVStore.open(this.dbFile.getAbsolutePath());
-        store.compactMoveChunks();
-        store.close();
+        this.store = MVStore.open(this.dbFile.getAbsolutePath());
+        this.store.compactMoveChunks();
+    }
+
+    public void shutdown() {
+        this.store.close();
     }
 
     public CloudNotificationInfo getCloudNotification(

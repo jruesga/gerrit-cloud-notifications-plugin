@@ -23,6 +23,7 @@ import com.ruesga.gerrit.plugins.fcm.workers.FcmUploaderWorker;
 
 public class LifeCycleHandler implements LifecycleListener {
 
+    private final DatabaseManager db;
     private final FcmUploaderWorker uploader;
 
     @Inject
@@ -31,6 +32,7 @@ public class LifeCycleHandler implements LifecycleListener {
             DatabaseManager db,
             FcmUploaderWorker uploader) {
         super();
+        this.db = db;
         this.uploader = uploader;
     }
 
