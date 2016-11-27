@@ -35,7 +35,7 @@ import com.ruesga.gerrit.plugins.fcm.workers.FcmUploaderWorker;
 
 public class ApiModule extends RestApiModule {
 
-    public static final String ENTRY_POINT = "cloud-notification";
+    public static final String ENTRY_POINT = "cloud-notifications";
 
     @Override
     protected void configure() {
