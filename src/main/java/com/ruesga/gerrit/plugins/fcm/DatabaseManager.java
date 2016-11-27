@@ -97,9 +97,9 @@ public class DatabaseManager {
             conn = this.connectionPool.getConnection();
             st = conn.prepareStatement("select * from notifications where " +
                     "user = ? and device = ? and token = ?");
-            st.setString(0, userName);
-            st.setString(1, deviceId);
-            st.setString(2, token);
+            st.setString(1, userName);
+            st.setString(2, deviceId);
+            st.setString(3, token);
             rs = st.executeQuery();
             if (rs.next()) {
                 return gson.fromJson(
@@ -125,7 +125,7 @@ public class DatabaseManager {
             conn = this.connectionPool.getConnection();
             st = conn.prepareStatement("select * from notifications where " +
                     "user = ?");
-            st.setString(0, userName);
+            st.setString(1, userName);
             rs = st.executeQuery();
             while (rs.next()) {
                 notifications.add(gson.fromJson(
@@ -151,10 +151,10 @@ public class DatabaseManager {
             st = conn.prepareStatement("merge into notifications (user, " +
                     "device, token, data) KEY(user, device, token) " +
                     "VALUES (?, ?, ?, ?)");
-            st.setString(0, userName);
-            st.setString(1, notification.deviceId);
-            st.setString(2, notification.token);
-            st.setString(3, gson.toJson(notification));
+            st.setString(1, userName);
+            st.setString(2, notification.deviceId);
+            st.setString(3, notification.token);
+            st.setString(4, gson.toJson(notification));
             st.execute();
         } catch (SQLException ex) {
             log.warn(String.format(
@@ -173,9 +173,9 @@ public class DatabaseManager {
             conn = this.connectionPool.getConnection();
             st = conn.prepareStatement("delete from notifications where " +
                     "user = ? and device = ? and token = ?");
-            st.setString(0, userName);
-            st.setString(1, deviceId);
-            st.setString(2, token);
+            st.setString(1, userName);
+            st.setString(2, deviceId);
+            st.setString(3, token);
             st.execute();
         } catch (SQLException ex) {
             log.warn(String.format(
