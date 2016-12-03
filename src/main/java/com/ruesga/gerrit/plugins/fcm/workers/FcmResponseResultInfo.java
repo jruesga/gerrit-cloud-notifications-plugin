@@ -18,7 +18,7 @@ package com.ruesga.gerrit.plugins.fcm.workers;
 import com.google.gson.annotations.SerializedName;
 
 public class FcmResponseResultInfo {
-    @SerializedName("message_id") private String messageId;
-    @SerializedName("error") private String error;
-    @SerializedName("registration_id") private String registrationId;
+    @SerializedName("message_id") public String messageId;
+    @SerializedName("error") public String error;
+    @SerializedName("registration_id") public String registrationId;
 }

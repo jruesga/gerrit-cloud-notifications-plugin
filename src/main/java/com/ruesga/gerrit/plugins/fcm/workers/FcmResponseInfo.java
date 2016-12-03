@@ -20,9 +20,9 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 public class FcmResponseInfo {
-    @SerializedName("multicast_id") private Integer multicastId;
-    @SerializedName("success") private Integer success;
-    @SerializedName("failure") private Integer failure;
-    @SerializedName("canonical_ids") private Integer canonicalIds;
-    @SerializedName("results") private List<FcmResponseResultInfo> results;
+    @SerializedName("multicast_id") public Integer multicastId;
+    @SerializedName("success") public Integer success;
+    @SerializedName("failure") public Integer failure;
+    @SerializedName("canonical_ids") public Integer canonicalIds;
+    @SerializedName("results") public List<FcmResponseResultInfo> results;
 }
