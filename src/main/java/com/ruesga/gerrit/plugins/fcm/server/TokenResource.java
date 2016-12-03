@@ -16,7 +16,6 @@
 package com.ruesga.gerrit.plugins.fcm.server;
 
 import com.google.gerrit.extensions.restapi.RestView;
-import com.google.gerrit.server.IdentifiedUser;
 import com.google.inject.TypeLiteral;
 
 public class TokenResource extends DeviceResource {
@@ -25,8 +24,8 @@ public class TokenResource extends DeviceResource {
 
     private final String token;
 
-    public TokenResource(IdentifiedUser user, String device, String token) {
-      super(user, device);
+    public TokenResource(DeviceResource rsrc, String token) {
+      super(rsrc.getUser(), rsrc.getDevice());
       this.token = token;
     }
 

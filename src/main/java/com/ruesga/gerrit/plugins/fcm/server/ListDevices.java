@@ -15,7 +15,6 @@
  */
 package com.ruesga.gerrit.plugins.fcm.server;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gerrit.extensions.restapi.BadRequestException;
@@ -46,6 +45,6 @@ public class ListDevices implements RestReadView<AccountResource> {
         // Since return devices information from account, can lead to
         // tokens leak to different apps, just avoid it. Just return
         // empty information.
-        return new ArrayList<>();
+        throw new BadRequestException("unsupported!");
     }
 }

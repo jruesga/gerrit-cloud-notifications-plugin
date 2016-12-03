@@ -56,7 +56,7 @@ public class Tokens
             throw new ResourceNotFoundException();
         }
 
-        return new TokenResource(rsrc.getUser(), rsrc.getDevice(), id.get());
+        return new TokenResource(rsrc, id.get());
     }
 
     @Override

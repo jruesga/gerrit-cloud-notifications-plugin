@@ -15,7 +15,6 @@
  */
 package com.ruesga.gerrit.plugins.fcm.server;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gerrit.extensions.restapi.BadRequestException;
@@ -24,26 +23,33 @@ import com.google.gerrit.server.CurrentUser;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
+import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationInfo;
 
 @Singleton
 public class ListTokens implements RestReadView<DeviceResource> {
 
     private final Provider<CurrentUser> self;
+    private final DatabaseManager db;
 
     @Inject
-    public ListTokens(Provider<CurrentUser> self) {
+    public ListTokens(
+            Provider<CurrentUser> self,
+            DatabaseManager db) {
         super();
         this.self = self;
+        this.db = db;
     }
 
     @Override
-    public List<TokenResource> apply(DeviceResource rsrc)
+    public List<CloudNotificationInfo> apply(DeviceResource rsrc)
             throws BadRequestException {
         if (self.get() == null || self.get() != rsrc.getUser()) {
             throw new BadRequestException("invalid account!");
         }
 
-        // TODO
-        return new ArrayList<>();
+        // Obtain the list of tokens for the device
+        return db.getCloudNotifications(
+                self.get().getUserName(), rsrc.getDevice());
     }
 }
