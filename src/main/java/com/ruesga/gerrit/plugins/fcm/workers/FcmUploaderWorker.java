@@ -187,6 +187,7 @@ public class FcmUploaderWorker {
             int accountId, CloudNotificationInfo to, Notification what) {
         FcmRequestInfo request = new FcmRequestInfo();
         request.to = to.device;
+        request.timeToLive = 28800; // 8 hours
         if (to.responseMode.equals(CloudNotificationResponseMode.NOTIFICATION)
                 || to.responseMode.equals(CloudNotificationResponseMode.BOTH)) {
             request.notification = new FcmRequestNotificationInfo();

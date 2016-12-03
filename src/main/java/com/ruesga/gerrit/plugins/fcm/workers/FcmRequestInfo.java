@@ -19,7 +19,8 @@ import com.google.gson.annotations.SerializedName;
 import com.ruesga.gerrit.plugins.fcm.messaging.Notification;
 
 public class FcmRequestInfo {
-    @SerializedName("to") String to;
-    @SerializedName("notification") FcmRequestNotificationInfo notification;
-    @SerializedName("data") Notification data;
+    @SerializedName("to") public String to;
+    @SerializedName("time_to_live") public Integer timeToLive;
+    @SerializedName("notification") public FcmRequestNotificationInfo notification;
+    @SerializedName("data") public Notification data;
 }
