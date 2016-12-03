@@ -53,7 +53,8 @@ public class DeleteToken implements RestModifyView<TokenResource, Input> {
 
         // Delete registered client from database
         db.unregisterCloudNotification(
-                self.get().getUserName(), rsrc.getDevice(), rsrc.getToken());
+                self.get().getAccountId().get(),
+                rsrc.getDevice(), rsrc.getToken());
 
         // Done
         return Response.none();

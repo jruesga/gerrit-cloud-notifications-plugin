@@ -43,7 +43,7 @@ public class DatabaseManager {
     private static final Logger log =
             LoggerFactory.getLogger(Configuration.class);
 
-    private static final String DATABASE_NAME = "cloud-notifications.h2.db";
+    private static final String DATABASE_NAME = "cloud-notifications";
 
     private final File dbFile;
     private final String pluginName;
@@ -89,7 +89,7 @@ public class DatabaseManager {
     }
 
     public CloudNotificationInfo getCloudNotification(
-            String userName, String deviceId, String token) {
+            int accountId, String deviceId, String token) {
         Connection conn = null;
         PreparedStatement st = null;
         ResultSet rs = null;
@@ -97,7 +97,7 @@ public class DatabaseManager {
             conn = this.connectionPool.getConnection();
             st = conn.prepareStatement("select * from notifications where " +
                     "user = ? and device = ? and token = ?");
-            st.setString(1, userName);
+            st.setInt(1, accountId);
             st.setString(2, deviceId);
             st.setString(3, token);
             rs = st.executeQuery();
@@ -116,7 +116,7 @@ public class DatabaseManager {
         return null;
     }
 
-    public List<CloudNotificationInfo> getCloudNotifications(String userName) {
+    public List<CloudNotificationInfo> getCloudNotifications(int accountId) {
         List<CloudNotificationInfo> notifications = new ArrayList<>();
         Connection conn = null;
         PreparedStatement st = null;
@@ -125,7 +125,7 @@ public class DatabaseManager {
             conn = this.connectionPool.getConnection();
             st = conn.prepareStatement("select * from notifications where " +
                     "user = ?");
-            st.setString(1, userName);
+            st.setInt(1, accountId);
             rs = st.executeQuery();
             while (rs.next()) {
                 notifications.add(gson.fromJson(
@@ -143,7 +143,7 @@ public class DatabaseManager {
     }
 
     public List<CloudNotificationInfo> getCloudNotifications(
-            String userName, String device) {
+            int accountId, String device) {
         List<CloudNotificationInfo> notifications = new ArrayList<>();
         Connection conn = null;
         PreparedStatement st = null;
@@ -152,7 +152,7 @@ public class DatabaseManager {
             conn = this.connectionPool.getConnection();
             st = conn.prepareStatement("select * from notifications where " +
                     "user = ? and device = ?");
-            st.setString(1, userName);
+            st.setInt(1, accountId);
             st.setString(2, device);
             rs = st.executeQuery();
             while (rs.next()) {
@@ -171,7 +171,7 @@ public class DatabaseManager {
     }
 
     public void registerCloudNotification(
-            String userName, CloudNotificationInfo notification) {
+            int accountId, CloudNotificationInfo notification) {
         Connection conn = null;
         PreparedStatement st = null;
         try {
@@ -179,7 +179,7 @@ public class DatabaseManager {
             st = conn.prepareStatement("merge into notifications (user, " +
                     "device, token, data) KEY(user, device, token) " +
                     "VALUES (?, ?, ?, ?)");
-            st.setString(1, userName);
+            st.setInt(1, accountId);
             st.setString(2, notification.device);
             st.setString(3, notification.token);
             st.setString(4, gson.toJson(notification));
@@ -194,14 +194,14 @@ public class DatabaseManager {
     }
 
     public void unregisterCloudNotification(
-            String userName, String deviceId, String token) {
+            int accountId, String deviceId, String token) {
         Connection conn = null;
         PreparedStatement st = null;
         try {
             conn = this.connectionPool.getConnection();
             st = conn.prepareStatement("delete from notifications where " +
                     "user = ? and device = ? and token = ?");
-            st.setString(1, userName);
+            st.setInt(1, accountId);
             st.setString(2, deviceId);
             st.setString(3, token);
             st.execute();
@@ -222,7 +222,7 @@ public class DatabaseManager {
             st = conn.createStatement();
             st.execute(
                     "create table if not exists notifications (" +
-                    "user varchar(50) NOT NULL, " +
+                    "user int unsigned NOT NULL, " +
                     "device varchar(250) NOT NULL, " +
                     "token varchar(50) NOT NULL, " +
                     "data varchar(4000) NOT NULL," +

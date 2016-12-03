@@ -16,7 +16,9 @@
 package com.ruesga.gerrit.plugins.fcm.handlers;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -24,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gerrit.common.EventListener;
 import com.google.gerrit.extensions.annotations.PluginName;
+import com.google.gerrit.reviewdb.client.Account;
+import com.google.gerrit.server.account.AccountState;
 import com.google.gerrit.server.data.AccountAttribute;
 import com.google.gerrit.server.data.ChangeAttribute;
 import com.google.gerrit.server.data.PatchSetAttribute;
@@ -38,9 +42,17 @@ import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.events.ReviewerAddedEvent;
 import com.google.gerrit.server.events.ReviewerDeletedEvent;
 import com.google.gerrit.server.events.TopicChangedEvent;
+import com.google.gerrit.server.query.QueryParseException;
+import com.google.gerrit.server.query.QueryResult;
+import com.google.gerrit.server.query.account.AccountQueryBuilder;
+import com.google.gerrit.server.query.account.AccountQueryProcessor;
+import com.google.gerrit.server.query.change.ChangeData;
+import com.google.gerrit.server.query.change.ChangeQueryBuilder;
+import com.google.gerrit.server.query.change.ChangeQueryProcessor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
+import com.google.gwtorm.server.OrmException;
 import com.google.inject.Inject;
 import com.ruesga.gerrit.plugins.fcm.messaging.Notification;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationEvents;
@@ -53,6 +65,10 @@ public class EventHandler implements EventListener {
 
     private final String pluginName;
     private final FcmUploaderWorker uploader;
+    private final AccountQueryBuilder aqb;
+    private final AccountQueryProcessor aqp;
+    private final ChangeQueryBuilder cqb;
+    private final ChangeQueryProcessor cqp;
     private final Gson gson;
 
     private static class AccountInfo {
@@ -74,10 +90,18 @@ public class EventHandler implements EventListener {
     @Inject
     public EventHandler(
             @PluginName String pluginName,
-            FcmUploaderWorker uploader) {
+            FcmUploaderWorker uploader,
+            AccountQueryBuilder aqb,
+            AccountQueryProcessor aqp,
+            ChangeQueryBuilder cqb,
+            ChangeQueryProcessor cqp) {
         super();
         this.pluginName = pluginName;
         this.uploader = uploader;
+        this.aqb = aqb;
+        this.aqp = aqp;
+        this.cqb = cqb;
+        this.cqp = cqp;
         this.gson = new GsonBuilder().create();
     }
 
@@ -154,12 +178,20 @@ public class EventHandler implements EventListener {
                 return;
             }
 
-            List<String> notifiedUsers = obtainNotifiedUsers(change, author);
+            // Obtain information about the accounts that need to be
+            // notified related to this event
+            List<Integer> notifiedUsers =
+                    obtainNotifiedAccounts(change, author);
+            if (notifiedUsers.isEmpty()) {
+                // Nobody to notify about this event
+                return;
+            }
 
+            // Build the notification
             Notification notification = new Notification();
-            notification.when = System.currentTimeMillis();
+            notification.when = event.eventCreatedOn;
             notification.event = eventId;
-            notification.change = change.id;
+            notification.change = change.number;
             notification.revision = patchset == null ? null : patchset.revision;
             notification.project = change.project;
             notification.branch = change.branch;
@@ -168,7 +200,8 @@ public class EventHandler implements EventListener {
             notification.subject = StringUtils.abbreviate(change.subject, 100);
             notification.extra = extra;
 
-            this.uploader.notify(notifiedUsers, notification);
+            // Perform notification
+            this.uploader.notifyTo(notifiedUsers, notification);
 
         } catch (Exception ex) {
             log.error(String.format(
@@ -176,20 +209,54 @@ public class EventHandler implements EventListener {
         }
     }
 
-    private List<String> obtainNotifiedUsers(
-            ChangeAttribute change, AccountAttribute author) {
-        List<String> notifiedUsers = new ArrayList<>();
-        if (change.allReviewers != null) {
-            for (AccountAttribute account : change.allReviewers) {
-                if (account.username != null && !account.username.isEmpty()) {
-                    notifiedUsers.add(account.username);
-                }
+    private List<Integer> obtainNotifiedAccounts(ChangeAttribute change,
+            AccountAttribute author) throws QueryParseException, OrmException {
+
+        // Obtain the information about the change and the author
+        QueryResult<ChangeData> changeQuery =
+                cqp.query(cqb.parse("change:" + change.number));
+        List<ChangeData> changeQueryResults = changeQuery.entities();
+        if (changeQueryResults == null || changeQueryResults.isEmpty()) {
+            log.warn(String.format(
+                    "[%s] No change found for %s", pluginName, change.number));
+            return new ArrayList<>();
+        }
+        ChangeData changeData = changeQueryResults.get(0);
+
+        // Obtain the information about the originator of this event
+        AccountState authorData = null;
+        if (author != null) {
+            QueryResult<AccountState> accountQuery =
+                    aqp.query(aqb.username(author.username));
+            List<AccountState> authorQueryResults = accountQuery.entities();
+            if (authorQueryResults != null && !authorQueryResults.isEmpty()) {
+                authorData = authorQueryResults.get(0);
             }
         }
-        if (author.username != null && !author.username.isEmpty()) {
-            notifiedUsers.remove(author.username);
+
+
+        Set<Integer> notifiedUsers = new HashSet<>();
+
+        // 1.- Owner of the change
+        notifiedUsers.add(changeData.change().getOwner().get());
+
+        // 2.- Reviewers
+        if (changeData.reviewers() != null &&
+                changeData.reviewers().all() != null) {
+            for (Account.Id account : changeData.reviewers().all().asList()) {
+                notifiedUsers.add(account.get());
+            }
         }
-        return notifiedUsers;
+
+        // 3.- Watchers
+        // TODO
+
+        // 4.- Remove the author of this event (he doesn't need to get
+        // the notification)
+        if (authorData != null) {
+            notifiedUsers.remove(authorData.getAccount().getId());
+        }
+        return new ArrayList<>(notifiedUsers);
     }
 
     private String toSerializedAccount(AccountAttribute account) {

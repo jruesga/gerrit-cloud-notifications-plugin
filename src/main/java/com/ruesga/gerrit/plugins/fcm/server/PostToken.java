@@ -71,7 +71,8 @@ public class PostToken
 
         // Create or update the notification
         CloudNotificationInfo notification = db.getCloudNotification(
-                self.get().getUserName(), rsrc.getDevice(), input.token);
+                self.get().getAccountId().get(),
+                rsrc.getDevice(), input.token);
         if (notification == null) {
             notification = new CloudNotificationInfo();
             notification.device = rsrc.getDevice();
@@ -83,7 +84,7 @@ public class PostToken
 
         // Persist the notification
         db.registerCloudNotification(
-                self.get().getUserName(), notification);
+                self.get().getAccountId().get(), notification);
 
         return notification;
     }

@@ -71,25 +71,25 @@ public class FcmUploaderWorker {
         this.executor.shutdown();
     }
 
-    public void notify(final List<String> notifiedUsers,
+    public void notifyTo(final List<Integer> notifiedAccounts,
             final Notification notification) {
         if (!config.isEnabled()) {
             return;
         }
 
-        for (final String user : notifiedUsers) {
-            this.executor.submit(new Runnable() {
+        for (final Integer accountId : notifiedAccounts) {
+            this.executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    asyncNotify(user, notification);
+                    asyncNotify(accountId, notification);
                 }
             });
         }
     }
 
-    private void asyncNotify(String user, Notification notification) {
+    private void asyncNotify(int accountId, Notification notification) {
         List<CloudNotificationInfo> notifications =
-                db.getCloudNotifications(user);
+                db.getCloudNotifications(accountId);
         for (CloudNotificationInfo to : notifications) {
             if ((notification.event | to.events) == to.events) {
                 Notification what = (Notification) notification.clone();

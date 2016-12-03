@@ -50,6 +50,6 @@ public class ListTokens implements RestReadView<DeviceResource> {
 
         // Obtain the list of tokens for the device
         return db.getCloudNotifications(
-                self.get().getUserName(), rsrc.getDevice());
+                self.get().getAccountId().get(), rsrc.getDevice());
     }
 }

@@ -49,7 +49,8 @@ public class GetToken implements RestReadView<TokenResource> {
 
         // Obtain from database
         CloudNotificationInfo notification = db.getCloudNotification(
-                self.get().getUserName(), rsrc.getDevice(), rsrc.getToken());
+                self.get().getAccountId().get(),
+                rsrc.getDevice(), rsrc.getToken());
         if (notification == null) {
             throw new ResourceNotFoundException();
         }
