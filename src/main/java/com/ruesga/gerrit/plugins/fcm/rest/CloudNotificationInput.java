@@ -17,21 +17,11 @@ package com.ruesga.gerrit.plugins.fcm.rest;
 
 import com.google.gson.annotations.SerializedName;
 
-public class CloudNotificationInfo {
-    /**
-     * A Firebase Cloud Messaging registered device identification.
-     */
-    @SerializedName("device") public String device;
-
+public class CloudNotificationInput {
     /**
      * A device token that unique identifies the server/account in the device.
      */
     @SerializedName("token") public String token;
-
-    /**
-     * When the device was registered.
-     */
-    @SerializedName("registeredOn") public String registeredOn;
 
     /**
      * A bitwise flag to indicate which events to notify.

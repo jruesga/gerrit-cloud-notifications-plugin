@@ -22,11 +22,11 @@ SOURCES = glob(['src/main/java/**/*.java'])
 RESOURCES = glob(['src/main/resources/**/*'])
 
 PROVIDED_DEPS = [
-  '//lib:gson'
+  '//lib:gson',
+  ':h2'
 ]
 
 DEPS = [
-  ':h2'
 ]
 
 gerrit_plugin(
@@ -36,13 +36,13 @@ gerrit_plugin(
   manifest_entries = [
     'Gerrit-PluginName: cloud-notifications',
     'Gerrit-ApiType: plugin',
-    'Gerrit-ApiVersion: 2.13.2',
+    'Gerrit-ApiVersion: 2.13.3',
     'Gerrit-Module: com.ruesga.gerrit.plugins.fcm.ApiModule',
     'Gerrit-InitStep: com.ruesga.gerrit.plugins.fcm.InitStep',
     'Implementation-Title: Firebase Cloud Notifications Plugin',
     'Implementation-Vendor: Jorge Ruesga',
     'Implementation-URL: https://github.com/jruesga/gerrit-cloud-notifications-plugin',
-    'Implementation-Version: 2.13.2'
+    'Implementation-Version: 2.13.3'
   ],
   deps = DEPS,
   provided_deps = PROVIDED_DEPS
@@ -55,7 +55,7 @@ java_sources(
 
 maven_jar(
   name = 'h2',
-  id = 'com.h2database:h2:1.4.193',
+  id = 'com.h2database:h2:1.3.176',
   license = 'Apache2.0',
   exclude_java_sources = True,
   visibility = [],

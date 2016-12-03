@@ -19,15 +19,14 @@ import com.google.gerrit.extensions.restapi.BadRequestException;
 import com.google.gerrit.extensions.restapi.Response;
 import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
-import com.ruesga.gerrit.plugins.fcm.server.DeleteCloudNotification.Input;
+import com.ruesga.gerrit.plugins.fcm.server.DeleteToken.Input;
 import com.google.gerrit.server.CurrentUser;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 
 @Singleton
-public class DeleteCloudNotification
-        implements RestModifyView<CloudNotification, Input> {
+public class DeleteToken implements RestModifyView<TokenResource, Input> {
 
     public static class Input {
     }
@@ -36,7 +35,7 @@ public class DeleteCloudNotification
     private final DatabaseManager db;
 
     @Inject
-    public DeleteCloudNotification(
+    public DeleteToken(
             Provider<CurrentUser> self,
             DatabaseManager db) {
         super();
@@ -45,18 +44,16 @@ public class DeleteCloudNotification
     }
 
     @Override
-    public Response<?> apply(CloudNotification notification, Input input)
+    public Response<?> apply(TokenResource rsrc, Input input)
             throws BadRequestException {
         // Request are only valid from the current authenticated user
-        if (self.get() != notification.getUser()) {
+        if (self.get() == null || self.get() != rsrc.getUser()) {
             throw new BadRequestException("invalid account!");
         }
 
         // Delete registered client from database
         db.unregisterCloudNotification(
-                self.get().getUserName(),
-                notification.getDeviceId(),
-                notification.getToken());
+                self.get().getUserName(), rsrc.getDevice(), rsrc.getToken());
 
         // Done
         return Response.none();

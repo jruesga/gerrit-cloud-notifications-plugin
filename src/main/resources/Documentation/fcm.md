@@ -4,7 +4,9 @@ Firebase Cloud Notifications Plugin
 App implementations should register the device token identifier received from FCM, using the *Register Cloud Notification* method to send the device token identifier and configure how it wants to be notified. When registering the device, it also should provide a token, which is returned on every notification, that allows to identify
 the Gerrit instance how send the notification. In addition, an app can configure which events wants to listen to and how the message from FCM is received (as notification, as custom data or received both). Read the FCM documentation to know which is more appropriated for your device operation system. See *Custom Data* in the FCM Notification section to see the information returned as custom data.
 
-An app can unregistered a device (and stop receiving notifications) from the Gerrit instance using the *Unregister Cloud Notification* method.
+A client application can unregistered a device (and stop receiving notifications) from the Gerrit instance using the *Unregister Cloud Notification* method.
+
+Client applications must use a combintion of fcm device identifier + a unique local account token, so they can register to listen notification for different accounts on this Gerrit instance. Token must 
 
 
 REST API
@@ -14,16 +16,46 @@ This plugin addes new methods to the /accounts Gerrit REST Api entry point to al
 
 ***
 
+**Get Cloud Notifications**
+
+`'GET /accounts/{account-id}/devices/{device-id}/tokens'`
+
+Retrieves a list of registered tokens by a device hold by the Gerrit server instance.
+
+*Request*
+This request requires an authenticated call and only returns information if account-id is the authenticated account. This method returns a list of *CloudNotificationInfo* entities (see below).
+
+    GET /accounts/self/devices/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/tokens
+
+*Response*
+
+    HTTP1.1 200 OK
+    Content-Disposition: attachment
+    Content-Type: application/json; charset=UTF-8
+    
+    )]}'
+    [
+     {
+       "device": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1",
+       "token": "f986567456f107d0eb2d84c85ac5aed2",
+       "registeredOn": "2016-11-25 14:45:03.123",
+       "events": 1023,
+       "responseMode": "DATA"
+     }
+    ]
+
+***
+
 **Get Cloud Notification**
 
-`'GET /accounts/{account-id}/cloud-notifications/{device-id}/{token}'`
+`'GET /accounts/{account-id}/devices/{device-id}/tokens/{token}'`
 
 Retrieves a registered device information hold by the Gerrit server instance.
 
 *Request*
-This request requires an authenticated call  and only returns information if account-id is the authenticated account. This method returns a *CloudNotificationInfo* entity (see below).
+This request requires an authenticated call and only returns information if account-id is the authenticated account. This method returns a *CloudNotificationInfo* entity (see below).
 
-    GET /accounts/self/cloud-notifications/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/f986567456f107d0eb2d84c85ac5aed2
+    GET /accounts/self/devices/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/tokens/f986567456f107d0eb2d84c85ac5aed2
 
 *Response*
 
@@ -33,9 +65,9 @@ This request requires an authenticated call  and only returns information if acc
     
     )]}'
     {
-      "deviceId": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1",
-      "registeredOn": "2016-11-25 14:45:03.123",
+      "device": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1",
       "token": "f986567456f107d0eb2d84c85ac5aed2",
+      "registeredOn": "2016-11-25 14:45:03.123",
       "events": 1023,
       "responseMode": "DATA"
     }
@@ -44,18 +76,17 @@ This request requires an authenticated call  and only returns information if acc
 
 **Register Cloud Notification**
 
-`'POST /accounts/{account-id}/cloud-notifications'`
+`'POST /accounts/{account-id}/devices/{device-id}/tokens'`
 
 Register or update a registered device information to be hold by the Gerrit server instance.
 
 *Request*
-This request requires an authenticated call  and is only valid if account-id is the authenticated account. This method accepts a *CloudNotificationInput* entity (see below).
+This request requires an authenticated call and is only valid if account-id is the authenticated account. This method accepts a *CloudNotificationInput* entity (see below).
 
-    POST /accounts/self/cloud-notifications
+    POST /accounts/self/devices/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/tokens
     Content-Type: application/json
     
     {
-      "deviceId": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1",
       "token": "f986567456f107d0eb2d84c85ac5aed2",
       "events": 8,
       "responseMode": "NOTIFICATION"
@@ -72,8 +103,8 @@ As a response, this method returs the registered *CloudNotificationInfo* entity 
     )]}'
     {
       "deviceId": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1",
-      "registeredOn": "2016-11-25 14:45:03.123",
       "token": "f986567456f107d0eb2d84c85ac5aed2",
+      "registeredOn": "2016-11-25 14:45:03.123",
       "events": 8,
       "responseMode": "NOTIFICATION"
     }
@@ -82,14 +113,14 @@ As a response, this method returs the registered *CloudNotificationInfo* entity 
 
 **Unregister Cloud Notification**
 
-`'DELETE /accounts/{account-id}/cloud-notifications/{device-id}/{token}'`
+`'DELETE /accounts/{account-id}/devices/{device-id}/tokens/{token}'`
 
 Unregister a registered device information hold by the Gerrit server instance.
 
 *Request*
-This request requires an authenticated call  and is only valid if account-id is the authenticated account.
+This request requires an authenticated call and is only valid if account-id is the authenticated account.
 
-    DELETE /accounts/self/cloud-notifications/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/f986567456f107d0eb2d84c85ac5aed2
+    DELETE /accounts/self/devices/bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1/tokens/f986567456f107d0eb2d84c85ac5aed2
 
 *Response*
 
@@ -101,11 +132,11 @@ This request requires an authenticated call  and is only valid if account-id is 
 
 Entity with information about a registered device.
 
-`deviceId: A Firebase Cloud Messaging registered device identification.`
-
-`registeredOn: When the device was registered.`
+`device: A Firebase Cloud Messaging registered device identification.`
 
 `token: A device token that unique identifies the server/account in the device.`
+
+`registeredOn: When the device was registered.`
 
 `events : A bitwise flag to indicate which events to notify. See CloudNotificationEvents below.`
 
@@ -116,8 +147,6 @@ Entity with information about a registered device.
 **CloudNotificationInput**
 
 Entity with information about a device to be register.
-
-`deviceId: A Firebase Cloud Messaging registered device identification.`
 
 `token: A device token that unique identifies the server/account in the device.`
 
@@ -171,6 +200,8 @@ FCM NOTIFICATION
 **Custom Data**
 
 This is the information sent as a custom data inside the FCM notification. Depends on the event, some of this fields could be empty.
+
+`when: An epoch timestamp on when notification where created`
 
 `token: The token used to registered the device`
 

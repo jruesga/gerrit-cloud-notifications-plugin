@@ -16,6 +16,7 @@
 package com.ruesga.gerrit.plugins.fcm.messaging;
 
 public class Notification {
+    public long when;
     public String token;
     public int event;
     public String change;
@@ -30,6 +31,7 @@ public class Notification {
     @Override
     public Object clone() {
         Notification other = new Notification();
+        other.when = when;
         other.token = token;
         other.event = event;
         other.change = change;

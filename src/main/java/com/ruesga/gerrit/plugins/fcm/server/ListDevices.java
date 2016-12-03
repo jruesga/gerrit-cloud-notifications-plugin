@@ -15,47 +15,37 @@
  */
 package com.ruesga.gerrit.plugins.fcm.server;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gerrit.extensions.restapi.BadRequestException;
-import com.google.gerrit.extensions.restapi.ResourceNotFoundException;
 import com.google.gerrit.extensions.restapi.RestReadView;
-import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
-import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationInfo;
 import com.google.gerrit.server.CurrentUser;
+import com.google.gerrit.server.account.AccountResource;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 
 @Singleton
-public class GetCloudNotification implements RestReadView<CloudNotification> {
-
+public class ListDevices implements RestReadView<AccountResource> {
     private final Provider<CurrentUser> self;
-    private final DatabaseManager db;
 
     @Inject
-    public GetCloudNotification(
-            Provider<CurrentUser> self,
-            DatabaseManager db) {
+    public ListDevices(Provider<CurrentUser> self) {
         super();
         this.self = self;
-        this.db = db;
     }
 
     @Override
-    public CloudNotificationInfo apply(CloudNotification notification)
-            throws BadRequestException, ResourceNotFoundException {
-        // Request are only valid from the current authenticated user
-        if (self.get() != notification.getUser()) {
+    public List<DeviceResource> apply(AccountResource rsrc)
+            throws BadRequestException {
+        if (self.get() == null || self.get() != rsrc.getUser()) {
             throw new BadRequestException("invalid account!");
         }
 
-        // Obtain from database
-        CloudNotificationInfo notif = db.getCloudNotification(
-                self.get().getUserName(),
-                notification.getDeviceId(),
-                notification.getToken());
-        if (notif == null) {
-            throw new ResourceNotFoundException();
-        }
-        return notif;
+        // Since return devices information from account, can lead to
+        // tokens leak to different apps, just avoid it. Just return
+        // empty information.
+        return new ArrayList<>();
     }
-  }
+}

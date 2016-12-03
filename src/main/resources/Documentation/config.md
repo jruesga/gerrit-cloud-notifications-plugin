@@ -13,14 +13,15 @@ described below in this document in the gerrit.config file.
 ```
 [plugin "cloud-notifications"]
         serverUrl = https://fcm.googleapis.com/fcm/send
-        serverToken = SERVER_API_KEY
-        databasePath = DATABASE_LOCATION_PATH
+        serverToken = <SERVER_API_KEY>
+        databasePath = <DATABASE_LOCATION_PATH>
 ```
 
 Plugin parameters
 --------------------
 
-* serverUrl: The Firebase Cloud Messaging backend url. Default: https://fcm.googleapis.com/fcm/send
+* serverUrl: The Firebase Cloud Messaging backend url.
+Default: https://fcm.googleapis.com/fcm/send
 
 * serverToken: Your Firebase Cloud Messaging server token. You can
 grab it from your Firebase project console, in Configuration > Cloud

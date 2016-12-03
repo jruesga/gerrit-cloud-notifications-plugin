@@ -15,87 +15,69 @@
  */
 package com.ruesga.gerrit.plugins.fcm.server;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
 import com.google.gerrit.extensions.restapi.BadRequestException;
 import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
-import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationEvents;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationInfo;
-import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationResponseMode;
-import com.ruesga.gerrit.plugins.fcm.server.PostCloudNotification.Input;
+import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationInput;
 import com.google.gerrit.server.CurrentUser;
-import com.google.gerrit.server.account.AccountResource;
-import com.google.gson.annotations.SerializedName;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 
 @Singleton
-public class PostCloudNotification
-        implements RestModifyView<AccountResource, Input> {
-
-    public static class Input {
-        /**
-         * A Firebase Cloud Messaging registered device identification.
-         */
-        @SerializedName("deviceId") public String deviceId;
-
-        /**
-         * A device token that unique identifies the server/account in the device.
-         */
-        @SerializedName("token") public String token;
-
-        /**
-         * A bitwise flag to indicate which events to notify.
-         * @see CloudNotificationEvents
-         */
-        @SerializedName("events") public int events;
-
-        /**
-         * Firebase response mode.
-         * @see CloudNotificationResponseMode
-         */
-        @SerializedName("responseMode")
-        public CloudNotificationResponseMode responseMode =
-                CloudNotificationResponseMode.BOTH;
-    }
+public class PostToken
+        implements RestModifyView<DeviceResource, CloudNotificationInput> {
 
     private final Provider<CurrentUser> self;
     private final DatabaseManager db;
+    private final SimpleDateFormat formatter;
 
     @Inject
-    public PostCloudNotification(
+    public PostToken(
             Provider<CurrentUser> self,
             DatabaseManager db) {
         super();
         this.self = self;
         this.db = db;
+
+        formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     @Override
-    public CloudNotificationInfo apply(AccountResource acct, Input input)
+    public CloudNotificationInfo apply(
+            DeviceResource rsrc, CloudNotificationInput input)
             throws BadRequestException {
         // Request are only valid from the current authenticated user
-        if (self.get() != acct.getUser()) {
+        if (self.get() == null || self.get() != rsrc.getUser()) {
             throw new BadRequestException("invalid account!");
         }
 
         // Check request parameters
-        if (input.deviceId == null || input.deviceId.isEmpty()) {
-            throw new BadRequestException("deviceId is empty!");
-        }
         if (input.token == null || input.token.isEmpty()) {
             throw new BadRequestException("token is empty!");
         }
 
+        final String registeredOn;
+        synchronized (formatter) {
+            registeredOn = formatter.format(new Date());
+        }
+
         // Create or update the notification
         CloudNotificationInfo notification = db.getCloudNotification(
-                self.get().getUserName(), input.deviceId, input.token);
+                self.get().getUserName(), rsrc.getDevice(), input.token);
         if (notification == null) {
             notification = new CloudNotificationInfo();
-            notification.deviceId = input.deviceId;
+            notification.device = rsrc.getDevice();
             notification.token = input.token;
         }
-        notification.registeredOn = System.currentTimeMillis();
+        notification.registeredOn = registeredOn;
         notification.events = input.events;
         notification.responseMode = input.responseMode;
 

@@ -142,6 +142,34 @@ public class DatabaseManager {
         return notifications;
     }
 
+    public List<CloudNotificationInfo> getCloudNotifications(
+            String userName, String device) {
+        List<CloudNotificationInfo> notifications = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            conn = this.connectionPool.getConnection();
+            st = conn.prepareStatement("select * from notifications where " +
+                    "user = ? and device = ?");
+            st.setString(1, userName);
+            st.setString(2, device);
+            rs = st.executeQuery();
+            while (rs.next()) {
+                notifications.add(gson.fromJson(
+                        rs.getString("data"), CloudNotificationInfo.class));
+            }
+        } catch (SQLException ex) {
+            log.warn(String.format(
+                    "[%s] Failed to access notifications database",
+                    this.pluginName), ex);
+        } finally {
+            safelyCloseResources(conn, st, rs);
+        }
+
+        return notifications;
+    }
+
     public void registerCloudNotification(
             String userName, CloudNotificationInfo notification) {
         Connection conn = null;
@@ -152,14 +180,14 @@ public class DatabaseManager {
                     "device, token, data) KEY(user, device, token) " +
                     "VALUES (?, ?, ?, ?)");
             st.setString(1, userName);
-            st.setString(2, notification.deviceId);
+            st.setString(2, notification.device);
             st.setString(3, notification.token);
             st.setString(4, gson.toJson(notification));
             st.execute();
         } catch (SQLException ex) {
             log.warn(String.format(
                     "[%s] Failed to update device: %s",
-                    this.pluginName, notification.deviceId), ex);
+                    this.pluginName, notification.device), ex);
         } finally {
             safelyCloseResources(conn, st, null);
         }

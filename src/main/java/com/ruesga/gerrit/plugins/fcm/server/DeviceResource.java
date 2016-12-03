@@ -20,26 +20,18 @@ import com.google.gerrit.server.IdentifiedUser;
 import com.google.gerrit.server.account.AccountResource;
 import com.google.inject.TypeLiteral;
 
-public class CloudNotification extends AccountResource {
-    public static final TypeLiteral<RestView<CloudNotification>>
-            CLOUD_NOTIFICATION_KIND =
-                    new TypeLiteral<RestView<CloudNotification>>() {};
+public class DeviceResource extends AccountResource {
+    public static final TypeLiteral<RestView<DeviceResource>> DEVICE_KIND =
+            new TypeLiteral<RestView<DeviceResource>>() {};
 
-    private final String deviceId;
-    private final String token;
+    private final String device;
 
-    public CloudNotification(
-            IdentifiedUser user, String deviceId, String token) {
+    public DeviceResource(IdentifiedUser user, String device) {
       super(user);
-      this.deviceId = deviceId;
-      this.token = token;
+      this.device = device;
     }
 
-    public String getDeviceId() {
-      return deviceId;
-    }
-
-    public String getToken() {
-      return token;
+    public String getDevice() {
+      return device;
     }
 }

@@ -166,7 +166,7 @@ public class FcmUploaderWorker {
     private FcmRequestInfo createRequest(
             CloudNotificationInfo to, Notification what) {
         FcmRequestInfo request = new FcmRequestInfo();
-        request.to = to.deviceId;
+        request.to = to.device;
         if (to.responseMode.equals(CloudNotificationResponseMode.NOTIFICATION)
                 || to.responseMode.equals(CloudNotificationResponseMode.BOTH)) {
             request.notification = new FcmRequestNotificationInfo();

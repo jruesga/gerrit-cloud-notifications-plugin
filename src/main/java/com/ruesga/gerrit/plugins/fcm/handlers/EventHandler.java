@@ -153,10 +153,11 @@ public class EventHandler implements EventListener {
                 // Unsupported event for FCM notifications
                 return;
             }
-    
+
             List<String> notifiedUsers = obtainNotifiedUsers(change, author);
-    
+
             Notification notification = new Notification();
+            notification.when = System.currentTimeMillis();
             notification.event = eventId;
             notification.change = change.id;
             notification.revision = patchset == null ? null : patchset.revision;
@@ -166,7 +167,7 @@ public class EventHandler implements EventListener {
             notification.author = toSerializedAccount(author);
             notification.subject = StringUtils.abbreviate(change.subject, 100);
             notification.extra = extra;
-    
+
             this.uploader.notify(notifiedUsers, notification);
 
         } catch (Exception ex) {
