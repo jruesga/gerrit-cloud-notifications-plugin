@@ -224,7 +224,7 @@ public class DatabaseManager {
                     "create table if not exists notifications (" +
                     "user int unsigned NOT NULL, " +
                     "device varchar(250) NOT NULL, " +
-                    "token varchar(50) NOT NULL, " +
+                    "token varchar(250) NOT NULL, " +
                     "data varchar(4000) NOT NULL," +
                     "primary key (user, device, token))");
         } catch (SQLException ex) {
