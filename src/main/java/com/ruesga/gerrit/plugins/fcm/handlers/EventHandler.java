@@ -27,7 +27,14 @@ import org.slf4j.LoggerFactory;
 import com.google.gerrit.common.EventListener;
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.reviewdb.client.Account;
+import com.google.gerrit.reviewdb.client.AccountProjectWatch;
+import com.google.gerrit.reviewdb.client.AccountProjectWatch.NotifyType;
+import com.google.gerrit.reviewdb.server.ReviewDb;
+import com.google.gerrit.server.CurrentUser;
+import com.google.gerrit.server.IdentifiedUser;
+import com.google.gerrit.server.IdentifiedUser.GenericFactory;
 import com.google.gerrit.server.account.AccountState;
+import com.google.gerrit.server.config.AllProjectsName;
 import com.google.gerrit.server.data.AccountAttribute;
 import com.google.gerrit.server.data.ChangeAttribute;
 import com.google.gerrit.server.data.PatchSetAttribute;
@@ -42,6 +49,7 @@ import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.events.ReviewerAddedEvent;
 import com.google.gerrit.server.events.ReviewerDeletedEvent;
 import com.google.gerrit.server.events.TopicChangedEvent;
+import com.google.gerrit.server.query.Predicate;
 import com.google.gerrit.server.query.QueryParseException;
 import com.google.gerrit.server.query.QueryResult;
 import com.google.gerrit.server.query.account.AccountQueryBuilder;
@@ -54,6 +62,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import com.google.gwtorm.server.OrmException;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.ruesga.gerrit.plugins.fcm.messaging.Notification;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationEvents;
 import com.ruesga.gerrit.plugins.fcm.workers.FcmUploaderWorker;
@@ -69,6 +78,9 @@ public class EventHandler implements EventListener {
     private final AccountQueryProcessor aqp;
     private final ChangeQueryBuilder cqb;
     private final ChangeQueryProcessor cqp;
+    private final Provider<ReviewDb> reviewdb;
+    private final GenericFactory identifiedUserFactory;
+    private final AllProjectsName allProjectsName;
     private final Gson gson;
 
     public static class AccountInfo {
@@ -94,7 +106,10 @@ public class EventHandler implements EventListener {
             AccountQueryBuilder aqb,
             AccountQueryProcessor aqp,
             ChangeQueryBuilder cqb,
-            ChangeQueryProcessor cqp) {
+            ChangeQueryProcessor cqp,
+            Provider<ReviewDb> reviewdb,
+            GenericFactory identifiedUserFactory,
+            AllProjectsName allProjectsName) {
         super();
         this.pluginName = pluginName;
         this.uploader = uploader;
@@ -102,6 +117,9 @@ public class EventHandler implements EventListener {
         this.aqp = aqp;
         this.cqb = cqb;
         this.cqp = cqp;
+        this.reviewdb = reviewdb;
+        this.identifiedUserFactory = identifiedUserFactory;
+        this.allProjectsName = allProjectsName;
         this.gson = new GsonBuilder().create();
     }
 
@@ -113,16 +131,19 @@ public class EventHandler implements EventListener {
             AccountAttribute author = null;
             PatchSetAttribute patchset = null;
             String extra = null;
+            NotifyType type = NotifyType.ALL;
             if (event instanceof ChangeAbandonedEvent) {
                 eventId = CloudNotificationEvents.CHANGE_ABANDONED_EVENT;
                 change = ((ChangeAbandonedEvent) event).change.get();
                 author = ((ChangeAbandonedEvent) event).abandoner.get();
                 patchset = ((ChangeAbandonedEvent) event).patchSet.get();
+                type = NotifyType.ABANDONED_CHANGES;
             } else if (event instanceof ChangeMergedEvent) {
                 eventId = CloudNotificationEvents.CHANGE_MERGED_EVENT;
                 change = ((ChangeMergedEvent) event).change.get();
                 author = ((ChangeMergedEvent) event).submitter.get();
                 patchset = ((ChangeMergedEvent) event).patchSet.get();
+                type = NotifyType.SUBMITTED_CHANGES;
             } else if (event instanceof ChangeRestoredEvent) {
                 eventId = CloudNotificationEvents.CHANGE_RESTORED_EVENT;
                 change = ((ChangeRestoredEvent) event).change.get();
@@ -135,6 +156,7 @@ public class EventHandler implements EventListener {
                 patchset = ((CommentAddedEvent) event).patchSet.get();
                 extra = StringUtils.abbreviate(
                         ((CommentAddedEvent) event).comment, 250);
+                type = NotifyType.ALL_COMMENTS;
             } else if (event instanceof DraftPublishedEvent) {
                 eventId = CloudNotificationEvents.DRAFT_PUBLISHED_EVENT;
                 change = ((DraftPublishedEvent) event).change.get();
@@ -164,6 +186,7 @@ public class EventHandler implements EventListener {
                 change = ((PatchSetCreatedEvent) event).change.get();
                 author = ((PatchSetCreatedEvent) event).uploader.get();
                 patchset = ((PatchSetCreatedEvent) event).patchSet.get();
+                type = NotifyType.NEW_PATCHSETS;
             } else if (event instanceof TopicChangedEvent) {
                 eventId = CloudNotificationEvents.TOPIC_CHANGED_EVENT;
                 change = ((TopicChangedEvent) event).change.get();
@@ -181,7 +204,7 @@ public class EventHandler implements EventListener {
             // Obtain information about the accounts that need to be
             // notified related to this event
             List<Integer> notifiedUsers =
-                    obtainNotifiedAccounts(change, author);
+                    obtainNotifiedAccounts(change, author, type);
             if (notifiedUsers.isEmpty()) {
                 // Nobody to notify about this event
                 return;
@@ -210,7 +233,8 @@ public class EventHandler implements EventListener {
     }
 
     private List<Integer> obtainNotifiedAccounts(ChangeAttribute change,
-            AccountAttribute author) throws QueryParseException, OrmException {
+            AccountAttribute author, NotifyType type)
+            throws QueryParseException, OrmException {
 
         // Obtain the information about the change and the author
         QueryResult<ChangeData> changeQuery =
@@ -249,7 +273,7 @@ public class EventHandler implements EventListener {
         }
 
         // 3.- Watchers
-        // TODO
+        notifiedUsers.addAll(getWatchers(type, changeData));
 
         // 4.- Remove the author of this event (he doesn't need to get
         // the notification)
@@ -268,5 +292,59 @@ public class EventHandler implements EventListener {
         info.name = account.name;
         info.email = account.email;
         return this.gson.toJson(info);
+    }
+
+    private Set<Integer> getWatchers(NotifyType type, ChangeData change) {
+        Set<Integer> watchers = new HashSet<>();
+        try {
+            for (AccountProjectWatch w : reviewdb.get().accountProjectWatches()
+                    .byProject(change.project())) {
+                add(watchers, w, type, change);
+            }
+            for (AccountProjectWatch w : reviewdb.get().accountProjectWatches()
+                    .byProject(this.allProjectsName)) {
+                add(watchers, w, type, change);
+            }
+        } catch (OrmException ex) {
+            log.error(String.format(
+                    "[%s] Failed to obtain watchers", pluginName), ex);
+        }
+        return watchers;
+    }
+
+    private boolean add(Set<Integer> watchers, AccountProjectWatch w,
+            NotifyType type, ChangeData change) throws OrmException {
+        IdentifiedUser user = identifiedUserFactory.create(w.getAccountId());
+
+        try {
+            if (filterMatch(user, w.getFilter(), change)) {
+                // If we are set to notify on this type, add the user.
+                // Otherwise, still return true to stop notifications for this user.
+                if (w.isNotify(type)) {
+                    watchers.add(w.getAccountId().get());
+                }
+                return true;
+            }
+        } catch (QueryParseException e) {
+            // Ignore broken filter expressions.
+        }
+        return false;
+    }
+
+    private boolean filterMatch(
+            CurrentUser user, String filter, ChangeData change)
+            throws OrmException, QueryParseException {
+        ChangeQueryBuilder qb = cqb.asUser(user);
+        Predicate<ChangeData> p = qb.is_visible();
+
+        if (filter != null) {
+            Predicate<ChangeData> filterPredicate = qb.parse(filter);
+            if (p == null) {
+                p = filterPredicate;
+            } else {
+                p = Predicate.and(filterPredicate, p);
+            }
+        }
+        return p == null || p.asMatchable().match(change);
     }
 }
