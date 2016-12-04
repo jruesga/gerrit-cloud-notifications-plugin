@@ -254,7 +254,7 @@ public class EventHandler implements EventListener {
         // 4.- Remove the author of this event (he doesn't need to get
         // the notification)
         if (authorData != null) {
-            notifiedUsers.remove(authorData.getAccount().getId());
+            notifiedUsers.remove(authorData.getAccount().getId().get());
         }
         return new ArrayList<>(notifiedUsers);
     }
