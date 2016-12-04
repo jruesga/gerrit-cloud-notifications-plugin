@@ -20,6 +20,7 @@ public class Notification {
     public String token;
     public int event;
     public String change;
+    public int legacyChangeId;
     public String revision;
     public String project;
     public String branch;
@@ -35,6 +36,7 @@ public class Notification {
         other.token = token;
         other.event = event;
         other.change = change;
+        other.legacyChangeId = legacyChangeId;
         other.revision = revision;
         other.project = project;
         other.branch = branch;

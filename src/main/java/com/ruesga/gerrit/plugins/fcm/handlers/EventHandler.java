@@ -214,7 +214,8 @@ public class EventHandler implements EventListener {
             Notification notification = new Notification();
             notification.when = event.eventCreatedOn;
             notification.event = eventId;
-            notification.change = change.number;
+            notification.change = change.id;
+            notification.legacyChangeId = Integer.valueOf(change.number);
             notification.revision = patchset == null ? null : patchset.revision;
             notification.project = change.project;
             notification.branch = change.branch;

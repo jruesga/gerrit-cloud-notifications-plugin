@@ -207,7 +207,9 @@ This is the information sent as a custom data inside the FCM notification. Depen
 
 `event: The event type (see CloudNotificationEvents above)`
 
-`change: The legacy change identifier`
+`change: The change identifier`
+
+`legacyChangeId: The legacy change identifier`
 
 `revision: The revision/patchset identifier`
 
