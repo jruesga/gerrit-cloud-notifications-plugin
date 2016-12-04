@@ -49,7 +49,7 @@ public class Configuration {
         this.databasePath = cfg.getString(PROP_DATABASE_PATH);
         this.serverToken = cfg.getString(PROP_SERVER_TOKEN);
         String serverUrl = cfg.getString(PROP_SERVER_URL);
-        if (serverUrl != null && serverUrl.isEmpty()) {
+        if (serverUrl == null || serverUrl.isEmpty()) {
             serverUrl = Configuration.DEFAULT_SERVER_URL;
         }
         this.serverUrl = serverUrl;
