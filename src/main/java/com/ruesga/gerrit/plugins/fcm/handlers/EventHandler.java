@@ -71,20 +71,20 @@ public class EventHandler implements EventListener {
     private final ChangeQueryProcessor cqp;
     private final Gson gson;
 
-    private static class AccountInfo {
-        @SerializedName("username") private String username;
-        @SerializedName("name") private String name;
-        @SerializedName("email") private String email;
+    public static class AccountInfo {
+        @SerializedName("username") public String username;
+        @SerializedName("name") public String name;
+        @SerializedName("email") public String email;
     }
 
-    private static class TopicInfo {
-        @SerializedName("oldTopic") private String oldTopic;
-        @SerializedName("newTopic") private String newTopic;
+    public static class TopicInfo {
+        @SerializedName("oldTopic") public String oldTopic;
+        @SerializedName("newTopic") public String newTopic;
     }
 
-    private static class HashtagsInfo {
-        @SerializedName("oldHashtags") private String[] oldHashtags;
-        @SerializedName("newHashtags") private String[] newHashtags;
+    public static class HashtagsInfo {
+        @SerializedName("oldHashtags") public String[] oldHashtags;
+        @SerializedName("newHashtags") public String[] newHashtags;
     }
 
     @Inject

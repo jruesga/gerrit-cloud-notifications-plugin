@@ -20,5 +20,5 @@ import com.google.gson.annotations.SerializedName;
 public class FcmRequestNotificationInfo {
     @SerializedName("title") String title;
     @SerializedName("body") String body;
-    @SerializedName("icon") String icon = "ic_gerrit";
+    @SerializedName("icon") String icon = "ic_stats_gerrit_notification";
 }
