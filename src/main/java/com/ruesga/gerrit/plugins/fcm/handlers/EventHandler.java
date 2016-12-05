@@ -33,6 +33,7 @@ import com.google.gerrit.reviewdb.server.ReviewDb;
 import com.google.gerrit.server.CurrentUser;
 import com.google.gerrit.server.IdentifiedUser;
 import com.google.gerrit.server.IdentifiedUser.GenericFactory;
+import com.google.gerrit.server.ReviewerStatusUpdate;
 import com.google.gerrit.server.account.AccountState;
 import com.google.gerrit.server.config.AllProjectsName;
 import com.google.gerrit.server.data.AccountAttribute;
@@ -201,10 +202,31 @@ public class EventHandler implements EventListener {
                 return;
             }
 
+            // Obtain the information about the change and the author
+            ChangeData changeData = obtainChangeData(change);
+            if (changeData == null) {
+                return;
+            }
+
+            // Obtain the information about the originator of this event
+            AccountState authorData = null;
+            try {
+                if (author == null && (event instanceof ReviewerAddedEvent
+                        || event instanceof ReviewerDeletedEvent)) {
+                    // Extract author from change data
+                    authorData = resolveAuthorDataForReviewerEvent(changeData);
+                } else {
+                    authorData = resolveAuthorData(author);
+                }
+            } catch (Exception ex) {
+                log.warn(String.format(
+                        "[%s] Can't extract author", pluginName), ex);
+            }
+
             // Obtain information about the accounts that need to be
             // notified related to this event
-            List<Integer> notifiedUsers =
-                    obtainNotifiedAccounts(change, author, type);
+            List<Integer> notifiedUsers = obtainNotifiedAccounts(
+                    changeData, authorData, type);
             if (notifiedUsers.isEmpty()) {
                 // Nobody to notify about this event
                 return;
@@ -233,33 +255,9 @@ public class EventHandler implements EventListener {
         }
     }
 
-    private List<Integer> obtainNotifiedAccounts(ChangeAttribute change,
-            AccountAttribute author, NotifyType type)
+    private List<Integer> obtainNotifiedAccounts(
+            ChangeData changeData, AccountState authorData, NotifyType type)
             throws QueryParseException, OrmException {
-
-        // Obtain the information about the change and the author
-        QueryResult<ChangeData> changeQuery =
-                cqp.query(cqb.parse("change:" + change.number));
-        List<ChangeData> changeQueryResults = changeQuery.entities();
-        if (changeQueryResults == null || changeQueryResults.isEmpty()) {
-            log.warn(String.format(
-                    "[%s] No change found for %s", pluginName, change.number));
-            return new ArrayList<>();
-        }
-        ChangeData changeData = changeQueryResults.get(0);
-
-        // Obtain the information about the originator of this event
-        AccountState authorData = null;
-        if (author != null) {
-            QueryResult<AccountState> accountQuery =
-                    aqp.query(aqb.username(author.username));
-            List<AccountState> authorQueryResults = accountQuery.entities();
-            if (authorQueryResults != null && !authorQueryResults.isEmpty()) {
-                authorData = authorQueryResults.get(0);
-            }
-        }
-
-
         Set<Integer> notifiedUsers = new HashSet<>();
 
         // 1.- Owner of the change
@@ -282,6 +280,53 @@ public class EventHandler implements EventListener {
             notifiedUsers.remove(authorData.getAccount().getId().get());
         }
         return new ArrayList<>(notifiedUsers);
+    }
+
+    private ChangeData obtainChangeData(ChangeAttribute change)
+            throws QueryParseException, OrmException {
+        QueryResult<ChangeData> changeQuery =
+                cqp.query(cqb.parse("change:" + change.number));
+        List<ChangeData> changeQueryResults = changeQuery.entities();
+        if (changeQueryResults == null || changeQueryResults.isEmpty()) {
+            log.warn(String.format(
+                    "[%s] No change found for %s", pluginName, change.number));
+            return null;
+        }
+        return changeQueryResults.get(0);
+    }
+
+    private AccountState resolveAuthorData(AccountAttribute author)
+            throws QueryParseException, OrmException {
+        if (author != null) {
+            QueryResult<AccountState> accountQuery =
+                    aqp.query(aqb.username(author.username));
+            List<AccountState> authorQueryResults = accountQuery.entities();
+            if (authorQueryResults != null && !authorQueryResults.isEmpty()) {
+                return authorQueryResults.get(0);
+            }
+        }
+        return null;
+    }
+
+    private AccountState resolveAuthorDataForReviewerEvent(ChangeData change)
+            throws QueryParseException, OrmException {
+        final List<ReviewerStatusUpdate> statuses = change.reviewerUpdates();
+        if (statuses != null && !statuses.isEmpty()) {
+            final int last = statuses.size() - 1;
+            return getAccountFromId(statuses.get(last).updatedBy().get());
+        }
+        return null;
+    }
+
+    private AccountState getAccountFromId(int id)
+            throws QueryParseException, OrmException {
+        QueryResult<AccountState> accountQuery =
+                aqp.query(aqb.defaultQuery(String.valueOf(id)));
+        List<AccountState> authorQueryResults = accountQuery.entities();
+        if (authorQueryResults != null && !authorQueryResults.isEmpty()) {
+            return authorQueryResults.get(0);
+        }
+        return null;
     }
 
     private String toSerializedAccount(AccountAttribute account) {
