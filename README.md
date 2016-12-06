@@ -1,0 +1,1 @@
+This plugin allows to obtain push event notifications through Firebase Cloud Messaging (FCM).
