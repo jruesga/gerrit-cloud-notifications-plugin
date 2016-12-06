@@ -201,7 +201,7 @@ FCM NOTIFICATION
 
 This is the information sent as a custom data inside the FCM notification. Depends on the event, some of this fields could be empty.
 
-`when: An epoch timestamp on when notification where created`
+`when: An unix timestamp on when notification was created`
 
 `token: The token used to registered the device`
 
