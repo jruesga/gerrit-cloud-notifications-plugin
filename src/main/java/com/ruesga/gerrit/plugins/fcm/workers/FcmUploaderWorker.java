@@ -177,7 +177,7 @@ public class FcmUploaderWorker {
                             pluginName, submit.request.to, responseCode));
             }
 
-        } catch (IOException e) {
+        } catch (Throwable e) {
             log.warn(String.format(
                     "[%s] Failed to send notification to device %s",
                         pluginName, submit.request.to), e);
