@@ -98,7 +98,7 @@ public abstract class EventHandler {
         notification.event = getEventType();
         notification.when = event.getWhen().getTime() / 1000L;
         notification.who = event.getWho();
-        notification.change = event.getChange().id;
+        notification.change = event.getChange().changeId;
         notification.legacyChangeId = event.getChange()._number;
         notification.project = event.getChange().project;
         notification.branch = event.getChange().branch;
