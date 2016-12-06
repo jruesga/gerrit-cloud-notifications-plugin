@@ -19,6 +19,7 @@ import static com.google.gerrit.server.account.AccountResource.ACCOUNT_KIND;
 import static com.ruesga.gerrit.plugins.fcm.server.DeviceResource.DEVICE_KIND;
 import static com.ruesga.gerrit.plugins.fcm.server.TokenResource.TOKEN_KIND;
 
+import com.google.gerrit.extensions.events.AssigneeChangedListener;
 import com.google.gerrit.extensions.events.ChangeAbandonedListener;
 import com.google.gerrit.extensions.events.ChangeMergedListener;
 import com.google.gerrit.extensions.events.ChangeRestoredListener;
@@ -36,6 +37,7 @@ import com.google.gerrit.extensions.registration.DynamicSet;
 import com.google.gerrit.extensions.restapi.RestApiModule;
 import com.google.inject.Scopes;
 import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
+import com.ruesga.gerrit.plugins.fcm.handlers.AssigneeChangedEventHandler;
 import com.ruesga.gerrit.plugins.fcm.handlers.ChangeAbandonedEventHandler;
 import com.ruesga.gerrit.plugins.fcm.handlers.ChangeMergedEventHandler;
 import com.ruesga.gerrit.plugins.fcm.handlers.ChangeRestoredEventHandler;
@@ -70,6 +72,8 @@ public class ApiModule extends RestApiModule {
         // Configure listener handlers
         DynamicSet.bind(binder(), LifecycleListener.class)
                 .to(LifeCycleHandler.class);
+        DynamicSet.bind(binder(), AssigneeChangedListener.class)
+                .to(AssigneeChangedEventHandler.class);
         DynamicSet.bind(binder(), ChangeAbandonedListener.class)
                 .to(ChangeAbandonedEventHandler.class);
         DynamicSet.bind(binder(), ChangeMergedListener.class)
