@@ -118,7 +118,8 @@ public class FcmUploaderWorker {
         try {
             String data = gson.toJson(submit.request);
             if (log.isDebugEnabled()) {
-                log.debug("[%] Sending fcm notification: %s", pluginName, data);
+                log.debug(String.format(
+                        "[%] Sending fcm notification: %s", pluginName, data));
             }
 
             URL url = new URL(config.serverUrl);
