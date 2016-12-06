@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -39,11 +38,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.ruesga.gerrit.plugins.fcm.Configuration;
 import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
-import com.ruesga.gerrit.plugins.fcm.handlers.EventHandler.AccountInfo;
-import com.ruesga.gerrit.plugins.fcm.handlers.EventHandler.HashtagsInfo;
-import com.ruesga.gerrit.plugins.fcm.handlers.EventHandler.TopicInfo;
 import com.ruesga.gerrit.plugins.fcm.messaging.Notification;
-import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationEvents;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationInfo;
 import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationResponseMode;
 
@@ -197,7 +192,7 @@ public class FcmUploaderWorker {
                 || to.responseMode.equals(CloudNotificationResponseMode.BOTH)) {
             request.notification = new FcmRequestNotificationInfo();
             request.notification.title = "Gerrit notification";
-            request.notification.body = obtainNotificationBody(what);
+            request.notification.body = what.body;
         }
         if (to.responseMode.equals(CloudNotificationResponseMode.DATA)
                 || to.responseMode.equals(CloudNotificationResponseMode.BOTH)) {
@@ -287,51 +282,4 @@ public class FcmUploaderWorker {
         }, retryAfter, TimeUnit.SECONDS);
     }
 
-    private String obtainNotificationBody(Notification what) {
-        switch (what.event) {
-            case CloudNotificationEvents.CHANGE_ABANDONED_EVENT:
-                return "Change " + what.change + " abandoned";
-            case CloudNotificationEvents.CHANGE_MERGED_EVENT:
-                return "Change " + what.change + " merged";
-            case CloudNotificationEvents.CHANGE_RESTORED_EVENT:
-                return "Change " + what.change + " restored";
-            case CloudNotificationEvents.COMMENT_ADDED_EVENT:
-                return what.author + " commented on change " + what.change;
-            case CloudNotificationEvents.DRAFT_PUBLISHED_EVENT:
-                return "Draft published on change " + what.change;
-            case CloudNotificationEvents.HASHTAG_CHANGED_EVENT:
-                HashtagsInfo hashtag =
-                        gson.fromJson(what.extra, HashtagsInfo.class);
-                return "Hashtag changed  to ["
-                        + Arrays.toString(hashtag.newHashtags)
-                        +  "] on change " + what.change;
-            case CloudNotificationEvents.REVIEWER_ADDED_EVENT:
-                AccountInfo account = gson.fromJson(
-                        what.extra, AccountInfo.class);
-                return formatAccount(account)
-                        + " was added as reviewer on change " + what.change;
-            case CloudNotificationEvents.REVIEWER_DELETED_EVENT:
-                account = gson.fromJson(what.extra, AccountInfo.class);
-                return formatAccount(account)
-                        + " was removed as reviewer on change " + what.change;
-            case CloudNotificationEvents.PATCHSET_CREATED_EVENT:
-                return "New patchset " + what.revision
-                        + " created on change " + what.change;
-            case CloudNotificationEvents.TOPIC_CHANGED_EVENT:
-                TopicInfo topic = gson.fromJson(what.extra, TopicInfo.class);
-                return "Topic changed to " + topic.newTopic
-                        + " on change " + what.change;
-        }
-        return null;
-    }
-
-    private String formatAccount(AccountInfo account) {
-        if (account.name != null) {
-            return account.name;
-        }
-        if (account.username != null) {
-            return account.username;
-        }
-        return account.email;
-    }
 }

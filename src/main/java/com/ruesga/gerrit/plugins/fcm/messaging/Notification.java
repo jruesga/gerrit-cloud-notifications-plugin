@@ -15,8 +15,11 @@
  */
 package com.ruesga.gerrit.plugins.fcm.messaging;
 
+import com.google.gerrit.extensions.common.AccountInfo;
+
 public class Notification {
     public long when;
+    public AccountInfo who;
     public String token;
     public int event;
     public String change;
@@ -25,14 +28,16 @@ public class Notification {
     public String project;
     public String branch;
     public String topic;
-    public String author;
     public String subject;
     public String extra;
+
+    public transient String body;
 
     @Override
     public Object clone() {
         Notification other = new Notification();
         other.when = when;
+        other.who = who;
         other.token = token;
         other.event = event;
         other.change = change;
@@ -41,9 +46,9 @@ public class Notification {
         other.project = project;
         other.branch = branch;
         other.topic = topic;
-        other.author = author;
         other.subject = subject;
         other.extra = extra;
+        other.body = body;
         return other;
     }
 }

@@ -19,15 +19,35 @@ import static com.google.gerrit.server.account.AccountResource.ACCOUNT_KIND;
 import static com.ruesga.gerrit.plugins.fcm.server.DeviceResource.DEVICE_KIND;
 import static com.ruesga.gerrit.plugins.fcm.server.TokenResource.TOKEN_KIND;
 
-import com.google.gerrit.common.EventListener;
+import com.google.gerrit.extensions.events.ChangeAbandonedListener;
+import com.google.gerrit.extensions.events.ChangeMergedListener;
+import com.google.gerrit.extensions.events.ChangeRestoredListener;
+import com.google.gerrit.extensions.events.ChangeRevertedListener;
+import com.google.gerrit.extensions.events.CommentAddedListener;
+import com.google.gerrit.extensions.events.DraftPublishedListener;
+import com.google.gerrit.extensions.events.HashtagsEditedListener;
 import com.google.gerrit.extensions.events.LifecycleListener;
+import com.google.gerrit.extensions.events.ReviewerAddedListener;
+import com.google.gerrit.extensions.events.ReviewerDeletedListener;
+import com.google.gerrit.extensions.events.RevisionCreatedListener;
+import com.google.gerrit.extensions.events.TopicEditedListener;
 import com.google.gerrit.extensions.registration.DynamicMap;
 import com.google.gerrit.extensions.registration.DynamicSet;
 import com.google.gerrit.extensions.restapi.RestApiModule;
 import com.google.inject.Scopes;
 import com.ruesga.gerrit.plugins.fcm.DatabaseManager;
-import com.ruesga.gerrit.plugins.fcm.handlers.EventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.ChangeAbandonedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.ChangeMergedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.ChangeRestoredEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.ChangeRevertedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.CommentAddedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.DraftPublishedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.HashtagsEditedEventHandler;
 import com.ruesga.gerrit.plugins.fcm.handlers.LifeCycleHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.ReviewerAddedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.ReviewerDeletedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.RevisionCreatedEventHandler;
+import com.ruesga.gerrit.plugins.fcm.handlers.TopicEditedEventHandler;
 import com.ruesga.gerrit.plugins.fcm.server.DeleteToken;
 import com.ruesga.gerrit.plugins.fcm.server.Devices;
 import com.ruesga.gerrit.plugins.fcm.server.GetToken;
@@ -50,8 +70,28 @@ public class ApiModule extends RestApiModule {
         // Configure listener handlers
         DynamicSet.bind(binder(), LifecycleListener.class)
                 .to(LifeCycleHandler.class);
-        DynamicSet.bind(binder(), EventListener.class)
-                .to(EventHandler.class);
+        DynamicSet.bind(binder(), ChangeAbandonedListener.class)
+                .to(ChangeAbandonedEventHandler.class);
+        DynamicSet.bind(binder(), ChangeMergedListener.class)
+                .to(ChangeMergedEventHandler.class);
+        DynamicSet.bind(binder(), ChangeRestoredListener.class)
+                .to(ChangeRestoredEventHandler.class);
+        DynamicSet.bind(binder(), ChangeRevertedListener.class)
+                .to(ChangeRevertedEventHandler.class);
+        DynamicSet.bind(binder(), CommentAddedListener.class)
+                .to(CommentAddedEventHandler.class);
+        DynamicSet.bind(binder(), DraftPublishedListener.class)
+                .to(DraftPublishedEventHandler.class);
+        DynamicSet.bind(binder(), HashtagsEditedListener.class)
+                .to(HashtagsEditedEventHandler.class);
+        DynamicSet.bind(binder(), ReviewerDeletedListener.class)
+                .to(ReviewerDeletedEventHandler.class);
+        DynamicSet.bind(binder(), ReviewerAddedListener.class)
+                .to(ReviewerAddedEventHandler.class);
+        DynamicSet.bind(binder(), RevisionCreatedListener.class)
+                .to(RevisionCreatedEventHandler.class);
+        DynamicSet.bind(binder(), TopicEditedListener.class)
+                .to(TopicEditedEventHandler.class);
 
         // Configure the Rest API
         DynamicMap.mapOf(binder(), DEVICE_KIND);

@@ -16,6 +16,7 @@
 package com.ruesga.gerrit.plugins.fcm.handlers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,320 +25,151 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gerrit.common.EventListener;
 import com.google.gerrit.extensions.annotations.PluginName;
-import com.google.gerrit.reviewdb.client.Account;
+import com.google.gerrit.extensions.api.changes.NotifyHandling;
+import com.google.gerrit.extensions.client.ReviewerState;
+import com.google.gerrit.extensions.common.AccountInfo;
+import com.google.gerrit.extensions.common.ChangeInfo;
+import com.google.gerrit.extensions.events.ChangeEvent;
+import com.google.gerrit.extensions.events.RevisionEvent;
 import com.google.gerrit.reviewdb.client.AccountProjectWatch;
 import com.google.gerrit.reviewdb.client.AccountProjectWatch.NotifyType;
 import com.google.gerrit.reviewdb.server.ReviewDb;
 import com.google.gerrit.server.CurrentUser;
 import com.google.gerrit.server.IdentifiedUser;
 import com.google.gerrit.server.IdentifiedUser.GenericFactory;
-import com.google.gerrit.server.ReviewerStatusUpdate;
-import com.google.gerrit.server.account.AccountState;
 import com.google.gerrit.server.config.AllProjectsName;
-import com.google.gerrit.server.data.AccountAttribute;
-import com.google.gerrit.server.data.ChangeAttribute;
-import com.google.gerrit.server.data.PatchSetAttribute;
-import com.google.gerrit.server.events.ChangeAbandonedEvent;
-import com.google.gerrit.server.events.ChangeMergedEvent;
-import com.google.gerrit.server.events.ChangeRestoredEvent;
-import com.google.gerrit.server.events.CommentAddedEvent;
-import com.google.gerrit.server.events.DraftPublishedEvent;
-import com.google.gerrit.server.events.Event;
-import com.google.gerrit.server.events.HashtagsChangedEvent;
-import com.google.gerrit.server.events.PatchSetCreatedEvent;
-import com.google.gerrit.server.events.ReviewerAddedEvent;
-import com.google.gerrit.server.events.ReviewerDeletedEvent;
-import com.google.gerrit.server.events.TopicChangedEvent;
 import com.google.gerrit.server.query.Predicate;
 import com.google.gerrit.server.query.QueryParseException;
 import com.google.gerrit.server.query.QueryResult;
-import com.google.gerrit.server.query.account.AccountQueryBuilder;
-import com.google.gerrit.server.query.account.AccountQueryProcessor;
 import com.google.gerrit.server.query.change.ChangeData;
 import com.google.gerrit.server.query.change.ChangeQueryBuilder;
 import com.google.gerrit.server.query.change.ChangeQueryProcessor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.SerializedName;
 import com.google.gwtorm.server.OrmException;
-import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.ruesga.gerrit.plugins.fcm.messaging.Notification;
-import com.ruesga.gerrit.plugins.fcm.rest.CloudNotificationEvents;
 import com.ruesga.gerrit.plugins.fcm.workers.FcmUploaderWorker;
 
-public class EventHandler implements EventListener {
+public abstract class EventHandler {
 
-    private static final Logger log =
+    static final Logger log =
             LoggerFactory.getLogger(EventHandler.class);
 
     private final String pluginName;
     private final FcmUploaderWorker uploader;
-    private final AccountQueryBuilder aqb;
-    private final AccountQueryProcessor aqp;
+    private final AllProjectsName allProjectsName;
     private final ChangeQueryBuilder cqb;
     private final ChangeQueryProcessor cqp;
     private final Provider<ReviewDb> reviewdb;
     private final GenericFactory identifiedUserFactory;
-    private final AllProjectsName allProjectsName;
     private final Gson gson;
 
-    public static class AccountInfo {
-        @SerializedName("username") public String username;
-        @SerializedName("name") public String name;
-        @SerializedName("email") public String email;
-    }
-
-    public static class TopicInfo {
-        @SerializedName("oldTopic") public String oldTopic;
-        @SerializedName("newTopic") public String newTopic;
-    }
-
-    public static class HashtagsInfo {
-        @SerializedName("oldHashtags") public String[] oldHashtags;
-        @SerializedName("newHashtags") public String[] newHashtags;
-    }
-
-    @Inject
     public EventHandler(
             @PluginName String pluginName,
             FcmUploaderWorker uploader,
-            AccountQueryBuilder aqb,
-            AccountQueryProcessor aqp,
+            AllProjectsName allProjectsName,
             ChangeQueryBuilder cqb,
             ChangeQueryProcessor cqp,
             Provider<ReviewDb> reviewdb,
-            GenericFactory identifiedUserFactory,
-            AllProjectsName allProjectsName) {
+            GenericFactory identifiedUserFactory) {
         super();
         this.pluginName = pluginName;
         this.uploader = uploader;
-        this.aqb = aqb;
-        this.aqp = aqp;
+        this.allProjectsName = allProjectsName;
         this.cqb = cqb;
         this.cqp = cqp;
         this.reviewdb = reviewdb;
         this.identifiedUserFactory = identifiedUserFactory;
-        this.allProjectsName = allProjectsName;
         this.gson = new GsonBuilder().create();
     }
 
-    @Override
-    public void onEvent(Event event) {
-        try {
-            int eventId;
-            ChangeAttribute change;
-            AccountAttribute author = null;
-            PatchSetAttribute patchset = null;
-            String extra = null;
-            NotifyType type = NotifyType.ALL;
-            if (event instanceof ChangeAbandonedEvent) {
-                eventId = CloudNotificationEvents.CHANGE_ABANDONED_EVENT;
-                change = ((ChangeAbandonedEvent) event).change.get();
-                author = ((ChangeAbandonedEvent) event).abandoner.get();
-                patchset = ((ChangeAbandonedEvent) event).patchSet.get();
-                type = NotifyType.ABANDONED_CHANGES;
-            } else if (event instanceof ChangeMergedEvent) {
-                eventId = CloudNotificationEvents.CHANGE_MERGED_EVENT;
-                change = ((ChangeMergedEvent) event).change.get();
-                author = ((ChangeMergedEvent) event).submitter.get();
-                patchset = ((ChangeMergedEvent) event).patchSet.get();
-                type = NotifyType.SUBMITTED_CHANGES;
-            } else if (event instanceof ChangeRestoredEvent) {
-                eventId = CloudNotificationEvents.CHANGE_RESTORED_EVENT;
-                change = ((ChangeRestoredEvent) event).change.get();
-                author = ((ChangeRestoredEvent) event).restorer.get();
-                patchset = ((ChangeRestoredEvent) event).patchSet.get();
-            } else if (event instanceof CommentAddedEvent) {
-                eventId = CloudNotificationEvents.COMMENT_ADDED_EVENT;
-                change = ((CommentAddedEvent) event).change.get();
-                author = ((CommentAddedEvent) event).author.get();
-                patchset = ((CommentAddedEvent) event).patchSet.get();
-                extra = StringUtils.abbreviate(
-                        ((CommentAddedEvent) event).comment, 250);
-                type = NotifyType.ALL_COMMENTS;
-            } else if (event instanceof DraftPublishedEvent) {
-                eventId = CloudNotificationEvents.DRAFT_PUBLISHED_EVENT;
-                change = ((DraftPublishedEvent) event).change.get();
-                author = ((DraftPublishedEvent) event).uploader.get();
-                patchset = ((DraftPublishedEvent) event).patchSet.get();
-            } else if (event instanceof HashtagsChangedEvent) {
-                eventId = CloudNotificationEvents.HASHTAG_CHANGED_EVENT;
-                change = ((HashtagsChangedEvent) event).change.get();
-                author = ((HashtagsChangedEvent) event).editor.get();
+    protected abstract int getEventType();
 
-                HashtagsInfo info = new HashtagsInfo();
-                info.oldHashtags = ((HashtagsChangedEvent) event).removed;
-                info.newHashtags = ((HashtagsChangedEvent) event).hashtags;
-                extra = this.gson.toJson(info);
-            } else if (event instanceof ReviewerAddedEvent) {
-                eventId = CloudNotificationEvents.REVIEWER_ADDED_EVENT;
-                change = ((ReviewerAddedEvent) event).change.get();
-                extra = toSerializedAccount(
-                        ((ReviewerAddedEvent) event).reviewer.get());
-            } else if (event instanceof ReviewerDeletedEvent) {
-                eventId = CloudNotificationEvents.REVIEWER_DELETED_EVENT;
-                change = ((ReviewerDeletedEvent) event).change.get();
-                extra = toSerializedAccount(
-                        ((ReviewerDeletedEvent) event).reviewer.get());
-            } else if (event instanceof PatchSetCreatedEvent) {
-                eventId = CloudNotificationEvents.PATCHSET_CREATED_EVENT;
-                change = ((PatchSetCreatedEvent) event).change.get();
-                author = ((PatchSetCreatedEvent) event).uploader.get();
-                patchset = ((PatchSetCreatedEvent) event).patchSet.get();
-                type = NotifyType.NEW_PATCHSETS;
-            } else if (event instanceof TopicChangedEvent) {
-                eventId = CloudNotificationEvents.TOPIC_CHANGED_EVENT;
-                change = ((TopicChangedEvent) event).change.get();
-                author = ((TopicChangedEvent) event).changer.get();
+    protected abstract NotifyType getNotifyType();
 
-                TopicInfo topicInfo = new TopicInfo();
-                topicInfo.oldTopic = ((TopicChangedEvent) event).oldTopic;
-                topicInfo.newTopic = change.topic;
-                extra = this.gson.toJson(topicInfo);
-            } else {
-                // Unsupported event for FCM notifications
-                return;
-            }
-
-            // Obtain the information about the change and the author
-            ChangeData changeData = obtainChangeData(change);
-            if (changeData == null) {
-                return;
-            }
-
-            // Obtain the information about the originator of this event
-            AccountState authorData = null;
-            try {
-                if (author == null && (event instanceof ReviewerAddedEvent
-                        || event instanceof ReviewerDeletedEvent)) {
-                    // Extract author from change data
-                    authorData = resolveAuthorDataForReviewerEvent(changeData);
-                } else {
-                    authorData = resolveAuthorData(author);
-                }
-            } catch (Exception ex) {
-                log.warn(String.format(
-                        "[%s] Can't extract author", pluginName), ex);
-            }
-
-            // Obtain information about the accounts that need to be
-            // notified related to this event
-            List<Integer> notifiedUsers = obtainNotifiedAccounts(
-                    changeData, authorData, type);
-            if (notifiedUsers.isEmpty()) {
-                // Nobody to notify about this event
-                return;
-            }
-
-            // Build the notification
-            Notification notification = new Notification();
-            notification.when = event.eventCreatedOn;
-            notification.event = eventId;
-            notification.change = change.id;
-            notification.legacyChangeId = Integer.valueOf(change.number);
-            notification.revision = patchset == null ? null : patchset.revision;
-            notification.project = change.project;
-            notification.branch = change.branch;
-            notification.topic = change.topic;
-            notification.author = toSerializedAccount(author);
-            notification.subject = StringUtils.abbreviate(change.subject, 100);
-            notification.extra = extra;
-
-            // Perform notification
-            this.uploader.notifyTo(notifiedUsers, notification);
-
-        } catch (Exception ex) {
-            log.error(String.format(
-                    "[%s] Failed to process event", pluginName), ex);
-        }
+    protected Gson getSerializer() {
+        return this.gson;
     }
 
-    private List<Integer> obtainNotifiedAccounts(
-            ChangeData changeData, AccountState authorData, NotifyType type)
-            throws QueryParseException, OrmException {
+    protected Notification createNotification(ChangeEvent event) {
+        Notification notification = new Notification();
+        notification.event = getEventType();
+        notification.when = event.getWhen().getTime() / 1000L;
+        notification.who = event.getWho();
+        notification.change = event.getChange().id;
+        notification.legacyChangeId = event.getChange()._number;
+        notification.project = event.getChange().project;
+        notification.branch = event.getChange().branch;
+        notification.topic = event.getChange().topic;
+        notification.subject = StringUtils.abbreviate(
+                event.getChange().subject, 100);
+        if (event instanceof RevisionEvent) {
+            notification.revision =
+                    ((RevisionEvent) event).getRevision().commit.commit;
+        }
+        return notification;
+    }
+
+    protected void notify(Notification notification, ChangeEvent event) {
+        // Check if this event should be notified
+        if (event.getNotify().equals(NotifyHandling.NONE)) {
+            if (log.isDebugEnabled()) {log.debug(
+                    String.format("[%s] Notify event %d is not enabled: %s",
+                        pluginName, getEventType(), gson.toJson(notification)));
+            }
+            return;
+        }
+
+        // Obtain information about the accounts that need to be
+        // notified related to this event
+        List<Integer> notifiedUsers = obtainNotifiedAccounts(event);
+        if (notifiedUsers.isEmpty()) {
+            // Nobody to notify about this event
+            return;
+        }
+
+        // Perform notification
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("[%s] Sending notification %s to %s",
+                    pluginName, gson.toJson(notification),
+                    gson.toJson(notifiedUsers)));
+        }
+        this.uploader.notifyTo(notifiedUsers, notification);
+    }
+
+    private List<Integer> obtainNotifiedAccounts(ChangeEvent event) {
         Set<Integer> notifiedUsers = new HashSet<>();
+        ChangeInfo change = event.getChange();
+        NotifyHandling notifyTo = event.getNotify();
 
         // 1.- Owner of the change
-        notifiedUsers.add(changeData.change().getOwner().get());
+        notifiedUsers.add(change.owner._accountId);
 
         // 2.- Reviewers
-        if (changeData.reviewers() != null &&
-                changeData.reviewers().all() != null) {
-            for (Account.Id account : changeData.reviewers().all().asList()) {
-                notifiedUsers.add(account.get());
+        if (notifyTo.equals(NotifyHandling.OWNER_REVIEWERS) ||
+                notifyTo.equals(NotifyHandling.ALL)) {
+            if (change.reviewers != null) {
+                for (ReviewerState state : change.reviewers.keySet()) {
+                    Collection<AccountInfo> accounts =
+                            change.reviewers.get(state);
+                    for (AccountInfo account : accounts) {
+                        notifiedUsers.add(account._accountId);
+                    }
+                }
             }
         }
 
         // 3.- Watchers
-        notifiedUsers.addAll(getWatchers(type, changeData));
+        ChangeData changeData = obtainChangeData(change);
+        notifiedUsers.addAll(getWatchers(getNotifyType(), changeData));
 
         // 4.- Remove the author of this event (he doesn't need to get
         // the notification)
-        if (authorData != null) {
-            notifiedUsers.remove(authorData.getAccount().getId().get());
-        }
+        notifiedUsers.remove(event.getWho()._accountId);
+
         return new ArrayList<>(notifiedUsers);
-    }
-
-    private ChangeData obtainChangeData(ChangeAttribute change)
-            throws QueryParseException, OrmException {
-        QueryResult<ChangeData> changeQuery =
-                cqp.query(cqb.parse("change:" + change.number));
-        List<ChangeData> changeQueryResults = changeQuery.entities();
-        if (changeQueryResults == null || changeQueryResults.isEmpty()) {
-            log.warn(String.format(
-                    "[%s] No change found for %s", pluginName, change.number));
-            return null;
-        }
-        return changeQueryResults.get(0);
-    }
-
-    private AccountState resolveAuthorData(AccountAttribute author)
-            throws QueryParseException, OrmException {
-        if (author != null) {
-            QueryResult<AccountState> accountQuery =
-                    aqp.query(aqb.username(author.username));
-            List<AccountState> authorQueryResults = accountQuery.entities();
-            if (authorQueryResults != null && !authorQueryResults.isEmpty()) {
-                return authorQueryResults.get(0);
-            }
-        }
-        return null;
-    }
-
-    private AccountState resolveAuthorDataForReviewerEvent(ChangeData change)
-            throws QueryParseException, OrmException {
-        final List<ReviewerStatusUpdate> statuses = change.reviewerUpdates();
-        if (statuses != null && !statuses.isEmpty()) {
-            final int last = statuses.size() - 1;
-            return getAccountFromId(statuses.get(last).updatedBy().get());
-        }
-        return null;
-    }
-
-    private AccountState getAccountFromId(int id)
-            throws QueryParseException, OrmException {
-        QueryResult<AccountState> accountQuery =
-                aqp.query(aqb.defaultQuery(String.valueOf(id)));
-        List<AccountState> authorQueryResults = accountQuery.entities();
-        if (authorQueryResults != null && !authorQueryResults.isEmpty()) {
-            return authorQueryResults.get(0);
-        }
-        return null;
-    }
-
-    private String toSerializedAccount(AccountAttribute account) {
-        if (account == null) {
-            return null;
-        }
-        AccountInfo info = new AccountInfo();
-        info.username = account.username;
-        info.name = account.name;
-        info.email = account.email;
-        return this.gson.toJson(info);
     }
 
     private Set<Integer> getWatchers(NotifyType type, ChangeData change) {
@@ -392,5 +224,34 @@ public class EventHandler implements EventListener {
             }
         }
         return p == null || p.asMatchable().match(change);
+    }
+
+    private ChangeData obtainChangeData(ChangeInfo change) {
+        try {
+            QueryResult<ChangeData> changeQuery =
+                    cqp.query(cqb.parse("change:" + change._number));
+            List<ChangeData> changeQueryResults = changeQuery.entities();
+            if (changeQueryResults == null || changeQueryResults.isEmpty()) {
+                log.warn(String.format("[%s] No change found for %s",
+                        pluginName, change._number));
+                return null;
+            }
+            return changeQueryResults.get(0);
+
+        } catch (Exception ex) {
+            log.error(String.format("[%s] Failed to obtain change data: %d",
+                    pluginName, change._number), ex);
+        }
+        return null;
+    }
+
+    protected String formatAccount(AccountInfo account) {
+        if (account.name != null) {
+            return account.name;
+        }
+        if (account.username != null) {
+            return account.username;
+        }
+        return account.email;
     }
 }

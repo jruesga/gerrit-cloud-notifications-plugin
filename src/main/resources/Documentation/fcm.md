@@ -203,6 +203,8 @@ This is the information sent as a custom data inside the FCM notification. Depen
 
 `when: An unix timestamp on when notification was created`
 
+`who: A json AccountInfo object of the account that originated the notification`
+
 `token: The token used to registered the device`
 
 `event: The event type (see CloudNotificationEvents above)`
@@ -219,8 +221,6 @@ This is the information sent as a custom data inside the FCM notification. Depen
 
 `topic: The topic identifier`
 
-`author: A json object that contains the username, name and email of the account that originated the notification`
-
 `subject: The subject of the change`
 
-`extra: A json with extended information depending on event type, like comment, old and new topics, ...`
+`extra: Extra notification information, if present. The structure depends on event type.`
