@@ -18,7 +18,7 @@ package com.ruesga.gerrit.plugins.fcm.workers;
 import com.google.gson.annotations.SerializedName;
 
 public class FcmRequestNotificationInfo {
-    @SerializedName("title") String title;
-    @SerializedName("body") String body;
-    @SerializedName("icon") String icon = "ic_stats_gerrit_notification";
+    @SerializedName("title") public String title;
+    @SerializedName("body") public String body;
+    @SerializedName("icon") public String icon = "ic_stats_gerrit_notification";
 }
