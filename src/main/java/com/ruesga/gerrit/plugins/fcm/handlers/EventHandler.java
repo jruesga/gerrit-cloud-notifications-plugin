@@ -115,7 +115,8 @@ public abstract class EventHandler {
     protected void notify(Notification notification, ChangeEvent event) {
         // Check if this event should be notified
         if (event.getNotify().equals(NotifyHandling.NONE)) {
-            if (log.isDebugEnabled()) {log.debug(
+            if (log.isDebugEnabled()) {
+                log.debug(
                     String.format("[%s] Notify event %d is not enabled: %s",
                         pluginName, getEventType(), gson.toJson(notification)));
             }
