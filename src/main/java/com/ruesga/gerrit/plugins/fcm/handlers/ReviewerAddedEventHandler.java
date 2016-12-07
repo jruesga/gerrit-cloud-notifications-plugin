@@ -15,7 +15,10 @@
  */
 package com.ruesga.gerrit.plugins.fcm.handlers;
 
+import java.util.Arrays;
+
 import com.google.gerrit.extensions.annotations.PluginName;
+import com.google.gerrit.extensions.common.AccountInfo;
 import com.google.gerrit.extensions.events.ReviewerAddedListener;
 import com.google.gerrit.reviewdb.client.AccountProjectWatch.NotifyType;
 import com.google.gerrit.reviewdb.server.ReviewDb;
@@ -58,11 +61,17 @@ public class ReviewerAddedEventHandler extends EventHandler
     }
 
     @Override
-    public void onReviewerAdded(Event event) {
+    public void onReviewersAdded(Event event) {
+        int count = event.getReviewers().size();
+        String[] reviewers = new String[count];
+        for (int i = 0; i < count; i++) {
+            AccountInfo reviewer = event.getReviewers().get(i);
+            reviewers[i] = formatAccount(reviewer);
+        }
         Notification notification = createNotification(event);
-        notification.extra = getSerializer().toJson(event.getReviewer());
+        notification.extra = getSerializer().toJson(event.getReviewers());
         notification.body = formatAccount(event.getWho())
-                + " added " + formatAccount(event.getReviewer())
+                + " added " + Arrays.toString(reviewers)
                 + " as reviewer on this changed";
 
         notify(notification, event);
